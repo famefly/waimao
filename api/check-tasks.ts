@@ -458,18 +458,26 @@ function parseScrapedData(
         break;
 
       case 'linkedin':
-        // 新 actor 输出人员档案格式
+        // apimaestro/linkedin-profile-search-scraper 输出格式
+        const linkedinCompany = item.company_name || item.companyName || item.company 
+          || item.current_company || item.currentCompany || item.organization 
+          || item.organization_name || '未知公司';
+        const linkedinName = item.full_name || item.name || item.fullName 
+          || `${item.firstname || item.firstName || ''} ${item.lastname || item.lastName || ''}`.trim();
+        const linkedinEmail = item.email || item.email_address || item.contact_email 
+          || item.work_email || extractEmail(item);
+        
         customer = {
           ...customer,
-          company_name: item.company || item.companyName || item.current_company || '未知公司',
-          country: countryToArray(item.location) || extractCountryFromAddress(item.location),
-          industry: item.industry || taskIndustry.split(' ')[0],
-          main_products: item.headline || '',
-          contact_email: item.email || extractEmail(item),
-          contact_phone: extractPhone(item),
-          contact_name: `${item.firstname || ''} ${item.lastname || ''}`.trim() || item.name || '',
+          company_name: linkedinCompany,
+          country: countryToArray(item.location || item.country || item.city) || extractCountryFromAddress(item.location),
+          industry: item.industry || item.industry_name || taskIndustry.split(' ')[0],
+          main_products: item.headline || item.title || item.job_title || '',
+          contact_email: linkedinEmail,
+          contact_phone: item.phone || item.contact_phone || extractPhone(item),
+          contact_name: linkedinName,
           annual_revenue: '',
-          source_url: item.linkedin_url || item.profileUrl || item.url || '',
+          source_url: item.linkedin_url || item.profile_url || item.profileUrl || item.url || '',
           annual_purchase: '',
           channel_type: detectChannelType(item, platform),
         };
@@ -650,9 +658,20 @@ function parseScrapedData(
         };
     }
 
-    // 只添加有效客户（有公司名称且不是"未知公司"）
-    if (customer.company_name && customer.company_name !== '未知公司') {
-      customers.push(customer);
+    // LinkedIn 和 Leads Finder 是个人档案，有联系人信息就保存
+    const isProfilePlatform = platform === 'linkedin' || platform === 'leads_finder';
+    const hasContactInfo = customer.contact_email || customer.contact_phone || customer.contact_name;
+    
+    if (isProfilePlatform) {
+      // 个人档案平台：有联系人信息就保存
+      if (hasContactInfo || customer.company_name !== '未知公司') {
+        customers.push(customer);
+      }
+    } else {
+      // 其他平台：需要有公司名
+      if (customer.company_name && customer.company_name !== '未知公司') {
+        customers.push(customer);
+      }
     }
   });
 
