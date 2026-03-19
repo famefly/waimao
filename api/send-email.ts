@@ -40,7 +40,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }),
     });
 
-    const data = await response.json();
+    const data: any = await response.json();
 
     if (response.ok) {
       return res.status(200).json({ success: true, id: data.id });

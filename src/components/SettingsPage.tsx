@@ -27,59 +27,127 @@ interface ApiKeyConfig {
   testable: boolean;
 }
 
-// Apify Actor 配置 - 都是带邮箱的 Actors
+// Apify Actor 配置 - 与 ScrapePage.tsx 保持一致
+// 优先选择带邮箱的高价值渠道
 const APIFY_ACTORS = [
+  // ===== 高价值渠道（带邮箱）=====
+  {
+    id: 'code_crafter/leads-finder',
+    name: 'Leads Finder (强烈推荐)',
+    description: '类似Apollo，直接返回验证邮箱！$1.5/千条，可按职位、行业、公司规模筛选',
+    platform: 'leads_finder',
+    supportsEmail: true,
+    pricing: '$1.5/千条',
+  },
+  {
+    id: 'memo23/thomasnet-scraper',
+    name: 'ThomasNet (美国工业)',
+    description: '美国最大工业供应商目录，包含公司、电话、网站、员工数',
+    platform: 'thomasnet',
+    supportsEmail: true,
+    pricing: '$5/千条',
+  },
+  {
+    id: 'curious_coder/crunchbase-scraper',
+    name: 'Crunchbase (科技公司)',
+    description: '全球创业公司数据库，包含融资信息、创始人联系方式',
+    platform: 'crunchbase',
+    supportsEmail: true,
+    pricing: '$2.5/千条',
+  },
+  
+  // ===== Amazon卖家 =====
+  {
+    id: 'junglee/amazon-seller-scraper',
+    name: 'Amazon卖家 (进口商)',
+    description: '抓取亚马逊卖家信息，这些卖家很多是进口商',
+    platform: 'amazon_seller',
+    supportsEmail: false,
+    pricing: '按使用量计费',
+  },
+  
+  // ===== Google Maps =====
   {
     id: 'compass/crawler-google-places',
-    name: 'Google Maps Scraper (带邮箱)',
-    description: '抓取Google地图商家信息，包含邮箱',
-    defaultInput: {
-      searchStringsArray: ['scaffolding supplier', 'construction materials'],
-      locationQuery: '',
-      maxCrawledPlacesPerSearch: 100,
-      language: 'en',
-      includeWebResults: true,
-      scrapeEmails: true, // 关键：启用邮箱抓取
-    },
+    name: 'Google Maps',
+    description: '获取商家名称、地址、电话、网站URL，邮箱需后续提取',
+    platform: 'google_maps',
+    supportsEmail: false,
+    pricing: '$2/千条',
+  },
+  
+  // ===== 商业目录 =====
+  {
+    id: 'trudax/yellow-pages-us-scraper',
+    name: 'Yellow Pages',
+    description: 'Yellow Pages US 黄页抓取，获取商家信息和网站URL',
+    platform: 'yellow_pages',
+    supportsEmail: false,
+    pricing: '按使用量计费',
   },
   {
-    id: 'curious_coder/facebook-pages-scraper',
-    name: 'Facebook Pages Scraper',
-    description: '抓取Facebook主页信息',
-    defaultInput: {
-      startUrls: [],
-      searchQueries: ['scaffolding', 'construction'],
-      maxResults: 100,
-    },
+    id: 'tri_angle/yelp-scraper',
+    name: 'Yelp Business',
+    description: 'Yelp 商家抓取，包含电话',
+    platform: 'yelp',
+    supportsEmail: false,
+    pricing: '按使用量计费',
+  },
+  
+  // ===== 社交媒体 =====
+  {
+    id: 'apimaestro/linkedin-profile-search-scraper',
+    name: 'LinkedIn',
+    description: 'LinkedIn 职位搜索+邮箱发现，无需登录，$5/千条',
+    platform: 'linkedin',
+    supportsEmail: true,
+    pricing: '$5/千条',
   },
   {
-    id: 'apify/instagram-scraper',
-    name: 'Instagram Scraper',
-    description: '抓取Instagram账号信息',
-    defaultInput: {
-      search: 'scaffolding',
-      searchType: 'user',
-      resultsLimit: 100,
-    },
+    id: 'apify/facebook-pages-scraper',
+    name: 'Facebook Pages',
+    description: 'Facebook 商家抓取，获取网站URL',
+    platform: 'facebook',
+    supportsEmail: false,
+    pricing: '按使用量计费',
   },
   {
-    id: 'anchor/linkedin-company-scraper',
-    name: 'LinkedIn Company Scraper (带邮箱)',
-    description: '抓取LinkedIn公司页面，包含联系邮箱',
-    defaultInput: {
-      searchQueries: ['scaffolding manufacturer'],
-      maxResults: 100,
-      extractEmails: true,
-    },
+    id: 'apify/instagram-search-scraper',
+    name: 'Instagram Search',
+    description: 'Instagram 搜索，无邮箱',
+    platform: 'instagram',
+    supportsEmail: false,
+    pricing: '按使用量计费',
   },
+  
+  // ===== 论坛/社区 =====
   {
-    id: 'epctex/aliexpress-scraper',
-    name: 'Alibaba/1688 Scraper',
-    description: '抓取阿里巴巴供应商信息',
-    defaultInput: {
-      keyword: 'scaffolding',
-      maxItems: 100,
-    },
+    id: 'peghin/ai-forum-scraper-stack-overflow-quora-reddit-more',
+    name: '论坛抓取',
+    description: '抓取论坛讨论，无邮箱',
+    platform: 'forum',
+    supportsEmail: false,
+    pricing: '按使用量计费',
+  },
+  
+  // ===== 海关数据 =====
+  {
+    id: 'custom/customs-data-scraper',
+    name: '海关数据 (进阶)',
+    description: '进出口贸易数据，获取真实采购商信息，需要配置第三方API',
+    platform: 'customs_data',
+    supportsEmail: true,
+    pricing: '需配置API',
+  },
+  
+  // ===== Scrapling 自适应爬虫 =====
+  {
+    id: 'maiboxuan/scrapling-actor',
+    name: 'Scrapling (自适应爬虫)',
+    description: '自适应爬虫，自动绕过反爬检测，支持任意网站',
+    platform: 'scrapling',
+    supportsEmail: false,
+    pricing: '按使用量计费',
   },
 ];
 
@@ -94,8 +162,15 @@ const API_KEYS: Omit<ApiKeyConfig, 'key_value'>[] = [
   {
     key_name: 'zhipu_api_key',
     label: '智谱 GLM API Key',
-    description: '用于 AI 生成个性化开发信内容（免费）',
+    description: '用于 AI 生成个性化开发信内容（免费，推荐）',
     placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxx.xxxxxxxxxxxxxxxx',
+    testable: true,
+  },
+  {
+    key_name: 'deepseek_api_key',
+    label: 'DeepSeek API Key',
+    description: '备用 AI 模型，当智谱不可用时自动切换（免费）',
+    placeholder: 'sk-xxxxxxxxxxxxxxxxxxxxxxxx',
     testable: true,
   },
   {
@@ -112,17 +187,92 @@ const API_KEYS: Omit<ApiKeyConfig, 'key_value'>[] = [
     placeholder: 'sales@yourdomain.com',
     testable: false,
   },
+  // ===== 邮箱验证服务（多选一） =====
   {
-    key_name: 'email_verify_api_key',
-    label: '邮箱验证 API Key（可选）',
-    description: 'Abstract API 邮箱验证服务（免费100次/月）',
-    placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxx',
+    key_name: 'kickbox_api_key',
+    label: 'Kickbox API Key（推荐）',
+    description: '邮箱验证服务 - 免费额度500次，$0.005/封',
+    placeholder: 'live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     testable: true,
+  },
+  {
+    key_name: 'emailable_api_key',
+    label: 'Emailable API Key',
+    description: '邮箱验证服务 - 免费额度250次，99%送达率保证',
+    placeholder: 'live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    testable: true,
+  },
+  {
+    key_name: 'debounce_api_key',
+    label: 'DeBounce API Key',
+    description: '邮箱验证服务 - 免费额度100次，最低价格$0.002/封',
+    placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    testable: true,
+  },
+  {
+    key_name: 'millionverifier_api_key',
+    label: 'MillionVerifier API Key',
+    description: '邮箱验证服务 - 免费额度200次，$0.0037/封',
+    placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    testable: true,
+  },
+  {
+    key_name: 'hunter_api_key',
+    label: 'Hunter.io API Key',
+    description: '邮箱查找+验证服务 - 免费额度50次/月',
+    placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    testable: true,
+  },
+  // ===== 电话验证服务（多选一） =====
+  {
+    key_name: 'numverify_api_key',
+    label: 'NumVerify API Key（推荐）',
+    description: '电话验证服务 - 免费额度100次/月，支持232国家',
+    placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    testable: true,
+  },
+  {
+    key_name: 'abstract_phone_api_key',
+    label: 'Abstract Phone API Key',
+    description: '电话验证服务 - 免费额度250次/月',
+    placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    testable: true,
+  },
+  {
+    key_name: 'numlookup_api_key',
+    label: 'NumLookup API Key',
+    description: '电话验证服务 - 免费额度100次/月，最低价格',
+    placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    testable: true,
+  },
+  // ===== 海关数据服务（多选一） =====
+  {
+    key_name: 'customs_api_provider',
+    label: '海关数据提供商',
+    description: '选择海关数据 API 提供商：tendata, exportgenius, descartes',
+    placeholder: 'tendata',
+    testable: false,
+  },
+  {
+    key_name: 'customs_api_key',
+    label: '海关数据 API Key',
+    description: '海关数据 API 密钥 - Tendata(特易)/Export Genius/Descartes',
+    placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    testable: true,
+  },
+  {
+    key_name: 'customs_api_url',
+    label: '海关数据 API URL',
+    description: '海关数据 API 地址（可选，使用默认值）',
+    placeholder: 'https://api.tendata.cn/v1',
+    testable: false,
   },
 ];
 
 export const SettingsPage: React.FC = () => {
-  const { isConfigured, setIsConfigured } = useStore();
+  const { isConfigured, setIsConfigured, currentUser } = useStore();
+  const isAdmin = currentUser?.role === 'admin';
+  
   const [supabaseUrl, setSupabaseUrl] = useState('');
   const [supabaseKey, setSupabaseKey] = useState('');
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
@@ -308,34 +458,28 @@ export const SettingsPage: React.FC = () => {
 
     try {
       let success = false;
-      let apiUrl = '';
 
-      // 使用我们的 API Routes 来测试，避免 CORS 问题
-      switch (keyName) {
-        case 'apify_token':
-          apiUrl = '/api/test-apify';
-          break;
-        case 'zhipu_api_key':
-          apiUrl = '/api/test-zhipu';
-          break;
-        case 'resend_api_key':
-          apiUrl = '/api/test-resend';
-          break;
-        case 'email_verify_api_key':
-          apiUrl = '/api/test-email-verify';
-          break;
-        default:
-          success = true;
-      }
+      // 使用统一的测试 API
+      const typeMap: Record<string, string> = {
+        'apify_token': 'apify',
+        'zhipu_api_key': 'zhipu',
+        'resend_api_key': 'resend',
+        'email_verify_api_key': 'emailVerify',
+        'deepseek_api_key': 'deepseek',
+      };
 
-      if (apiUrl) {
-        const response = await fetch(apiUrl, {
+      const testType = typeMap[keyName];
+      
+      if (testType) {
+        const response = await fetch('/api/test', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ apiKey: value }),
+          body: JSON.stringify({ type: testType, apiKey: value }),
         });
         const result = await response.json();
         success = result.success === true;
+      } else {
+        success = true;
       }
 
       setTestResults(prev => ({ ...prev, [keyName]: success ? 'success' : 'error' }));
@@ -403,6 +547,19 @@ export const SettingsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* 非管理员提示 */}
+      {!isAdmin && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start">
+          <AlertTriangle className="w-5 h-5 text-yellow-600 mr-3 mt-0.5" />
+          <div>
+            <p className="text-yellow-800 font-medium">仅管理员可修改设置</p>
+            <p className="text-yellow-600 text-sm mt-1">
+              您当前是普通用户，只能查看系统配置，无法进行修改。如需修改请联系管理员。
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Supabase 配置 */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
@@ -432,7 +589,8 @@ export const SettingsPage: React.FC = () => {
               autoComplete="off"
               data-lpignore="true"
               data-form-type="other"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={!isAdmin}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
           </div>
           <div>
@@ -448,7 +606,8 @@ export const SettingsPage: React.FC = () => {
               autoComplete="off"
               data-lpignore="true"
               data-form-type="other"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={!isAdmin}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
           </div>
         </div>
@@ -456,7 +615,7 @@ export const SettingsPage: React.FC = () => {
         <div className="flex items-center gap-4">
           <button
             onClick={connectSupabase}
-            disabled={loading}
+            disabled={loading || !isAdmin}
             className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
           >
             {loading ? (
@@ -467,12 +626,14 @@ export const SettingsPage: React.FC = () => {
             {isConfigured ? '重新连接' : '连接数据库'}
           </button>
 
-          <button
-            onClick={() => setShowSql(!showSql)}
-            className="text-sm text-blue-600 hover:text-blue-700"
-          >
-            {showSql ? '隐藏建表 SQL' : '查看建表 SQL'}
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setShowSql(!showSql)}
+              className="text-sm text-blue-600 hover:text-blue-700"
+            >
+              {showSql ? '隐藏建表 SQL' : '查看建表 SQL'}
+            </button>
+          )}
         </div>
 
         {showSql && (
@@ -505,7 +666,7 @@ export const SettingsPage: React.FC = () => {
           </h3>
           <button
             onClick={saveAllApiKeys}
-            disabled={!isConfigured || saving.all}
+            disabled={!isConfigured || saving.all || !isAdmin}
             className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >
             {saving.all ? (
@@ -578,7 +739,7 @@ export const SettingsPage: React.FC = () => {
                 </div>
                 <button
                   onClick={() => saveApiKey(config.key_name)}
-                  disabled={!isConfigured || saving[config.key_name]}
+                  disabled={!isConfigured || saving[config.key_name] || !isAdmin}
                   className="flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50"
                   title="保存"
                 >
@@ -591,7 +752,7 @@ export const SettingsPage: React.FC = () => {
                 {config.testable && (
                   <button
                     onClick={() => testApiConnection(config.key_name)}
-                    disabled={!isConfigured || testing[config.key_name] || !apiKeys[config.key_name]}
+                    disabled={!isConfigured || testing[config.key_name] || !apiKeys[config.key_name] || !isAdmin}
                     className="flex items-center px-3 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 disabled:opacity-50"
                     title="测试连接"
                   >
@@ -617,7 +778,7 @@ export const SettingsPage: React.FC = () => {
           </h3>
           <button
             onClick={saveSelectedActors}
-            disabled={!isConfigured || savingActors}
+            disabled={!isConfigured || savingActors || !isAdmin}
             className="flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
           >
             {savingActors ? (
@@ -637,18 +798,19 @@ export const SettingsPage: React.FC = () => {
           {APIFY_ACTORS.map(actor => (
             <div
               key={actor.id}
-              className={`p-4 border rounded-lg cursor-pointer transition-all ${
+              className={`p-4 border rounded-lg ${isAdmin ? 'cursor-pointer transition-all' : ''} ${
                 selectedActors.includes(actor.id)
                   ? 'border-orange-500 bg-orange-50'
                   : 'border-gray-200 hover:border-orange-300'
-              }`}
-              onClick={() => toggleActor(actor.id)}
+              } ${!isAdmin ? 'opacity-75' : ''}`}
+              onClick={() => isAdmin && toggleActor(actor.id)}
             >
               <div className="flex items-start">
                 <input
                   type="checkbox"
                   checked={selectedActors.includes(actor.id)}
-                  onChange={() => toggleActor(actor.id)}
+                  onChange={() => isAdmin && toggleActor(actor.id)}
+                  disabled={!isAdmin}
                   className="mt-1 mr-3"
                 />
                 <div className="flex-1">

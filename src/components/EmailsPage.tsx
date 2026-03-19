@@ -44,11 +44,12 @@ export const EmailsPage: React.FC = () => {
     }
 
     try {
-      // 加载已验证的客户
+      // 加载所有有邮箱的客户（不再限制为已验证）
       let customerQuery = supabase
         .from('customers')
         .select('*')
-        .eq('status', 'verified')
+        .not('contact_email', 'is', null)
+        .neq('contact_email', '')
         .order('created_at', { ascending: false });
 
       // 根据用户权限过滤
@@ -337,8 +338,11 @@ export const EmailsPage: React.FC = () => {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-800 flex items-center">
                     <Users className="w-5 h-5 mr-2 text-blue-600" />
-                    选择目标客户（已验证邮箱）
+                    选择目标客户（所有客户）
                   </h3>
+                  <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    邮箱验证为可选项，未验证邮箱也可发送
+                  </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={selectAllCustomers}
@@ -358,7 +362,7 @@ export const EmailsPage: React.FC = () => {
                   </div>
                 ) : customers.length === 0 ? (
                   <div className="text-center py-8 text-gray-400">
-                    暂无已验证邮箱的客户，请先抓取并验证客户数据
+                    暂无客户数据，请先抓取客户
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto">

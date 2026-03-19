@@ -76,7 +76,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // 5. 错误处理
       let errorMessage = 'Failed to fetch results';
       try {
-        const errorData = await response.json();
+        const errorData: any = await response.json();
         errorMessage = errorData.error?.message || errorData.message || errorMessage;
       } catch (e) {
         // 如果返回的不是 JSON，忽略解析错误

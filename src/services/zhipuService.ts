@@ -1,4 +1,5 @@
-// 智谱 GLM AI 服务（通过 API Routes）
+// AI 服务（通过 API Routes）
+// 支持多个免费模型：智谱 GLM、DeepSeek 等
 // 文档: https://open.bigmodel.cn/dev/api
 
 import { getSupabase } from '../lib/supabase';
@@ -12,6 +13,20 @@ export const getZhipuApiKey = async (): Promise<string | null> => {
     .from('api_configs')
     .select('key_value')
     .eq('key_name', 'zhipu_api_key')
+    .single();
+
+  return (data as { key_value: string } | null)?.key_value || null;
+};
+
+// 获取 DeepSeek API Key
+export const getDeepSeekApiKey = async (): Promise<string | null> => {
+  const supabase = getSupabase();
+  if (!supabase) return null;
+
+  const { data } = await supabase
+    .from('api_configs')
+    .select('key_value')
+    .eq('key_name', 'deepseek_api_key')
     .single();
 
   return (data as { key_value: string } | null)?.key_value || null;
@@ -119,7 +134,7 @@ export const COUNTRY_LANGUAGE_MAP: Record<string, string> = {
 export interface GenerateEmailParams {
   customerName: string;
   companyName: string;
-  country: string;
+  country: string | string[];
   industry: string;
   channelType: keyof typeof EMAIL_TEMPLATES;
   mainProducts?: string;
@@ -130,15 +145,18 @@ export interface GeneratedEmail {
   subject: string;
   content: string;
   language: string;
+  usedModel?: string;
 }
 
-// 使用智谱 GLM 生成开发信（通过 API Routes）
+// 使用 AI 生成开发信（通过 API Routes，支持多模型自动切换）
 export const generateDevelopmentEmail = async (
   params: GenerateEmailParams
 ): Promise<GeneratedEmail> => {
-  const apiKey = await getZhipuApiKey();
-  if (!apiKey) {
-    throw new Error('智谱 API Key 未配置');
+  const zhipuApiKey = await getZhipuApiKey();
+  const deepseekApiKey = await getDeepSeekApiKey();
+
+  if (!zhipuApiKey && !deepseekApiKey) {
+    throw new Error('请至少配置一个 AI API Key（智谱 GLM 或 DeepSeek）');
   }
 
   const {
@@ -151,15 +169,21 @@ export const generateDevelopmentEmail = async (
     targetLanguage,
   } = params;
 
+  // 处理 country 字段：如果是数组则取第一个或合并为字符串
+  const countryStr = Array.isArray(country) 
+    ? (country.length > 0 ? country[0] : '') 
+    : country;
+
   try {
     const response = await fetch('/api/generate-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        apiKey,
+        apiKey: zhipuApiKey,
+        deepseekApiKey,
         customerName,
         companyName,
-        country,
+        country: countryStr,
         industry,
         channelType,
         mainProducts,
@@ -170,16 +194,17 @@ export const generateDevelopmentEmail = async (
     const result = await response.json();
 
     if (!result.success) {
-      throw new Error(result.error || '智谱 API 调用失败');
+      throw new Error(result.error || 'AI 调用失败');
     }
 
     return {
       subject: result.subject,
       content: result.content,
       language: result.language,
+      usedModel: result.usedModel,
     };
   } catch (error) {
-    console.error('智谱 API 错误:', error);
+    console.error('AI API 错误:', error);
     throw error;
   }
 };
@@ -190,7 +215,7 @@ export const generateEmailsBatch = async (
     id: string;
     contact_name: string;
     company_name: string;
-    country: string;
+    country: string | string[];
     industry: string;
     channel_type: string;
     main_products?: string;
@@ -204,10 +229,15 @@ export const generateEmailsBatch = async (
     const customer = customers[i];
     
     try {
+      // 处理 country 字段：如果是数组则取第一个或合并为字符串
+      const countryStr = Array.isArray(customer.country) 
+        ? (customer.country.length > 0 ? customer.country[0] : '') 
+        : customer.country;
+
       const email = await generateDevelopmentEmail({
         customerName: customer.contact_name,
         companyName: customer.company_name,
-        country: customer.country,
+        country: countryStr,
         industry: customer.industry,
         channelType: (customer.channel_type as keyof typeof EMAIL_TEMPLATES) || 'distributor',
         mainProducts: customer.main_products,

@@ -1,0 +1,9 @@
+# Scrapling 框架
+scrapling[all]>=0.4.0
+
+# Apify SDK
+apify>=1.0.0
+
+# 其他依赖
+playwright>=1.40.0
+lxml>=4.9.0

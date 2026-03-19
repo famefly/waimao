@@ -9,7 +9,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { setCurrentUser } = useStore();
+  const { setCurrentUser, setCurrentDepartment } = useStore();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +45,7 @@ export default function LoginPage() {
         role: 'admin' | 'user';
         department_id: string | null;
         status: 'active' | 'inactive';
-        departments: { id: string; name: string; region?: string; products?: string[] } | null;
+        departments: { id: string; name: string; region?: string; products?: string[]; allowed_channels?: string[] } | null;
       };
 
       // 检查用户状态
@@ -61,6 +61,19 @@ export default function LoginPage() {
         .update({ last_login: new Date().toISOString() } as never)
         .eq('id', userData.id);
 
+      // 单独查询事业部信息以获取 allowed_channels
+      let departmentData = userData.departments;
+      if (userData.department_id) {
+        const { data: deptData } = await supabase
+          .from('departments')
+          .select('id, name, region, products, allowed_channels')
+          .eq('id', userData.department_id)
+          .single();
+        if (deptData) {
+          departmentData = deptData as { id: string; name: string; region?: string; products?: string[]; allowed_channels?: string[] };
+        }
+      }
+
       // 设置当前用户
       const user: User = {
         id: userData.id,
@@ -68,11 +81,16 @@ export default function LoginPage() {
         name: userData.name,
         role: userData.role,
         department_id: userData.department_id,
-        department: userData.departments,
+        department: departmentData,
         status: userData.status
       };
       
       setCurrentUser(user);
+      
+      // 设置当前事业部（包含 allowed_channels）
+      if (departmentData) {
+        setCurrentDepartment(departmentData as any);
+      }
 
       // 保存到 sessionStorage（不使用 localStorage 避免密码管理器问题）
       sessionStorage.setItem('yuantuo_user', JSON.stringify(user));

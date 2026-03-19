@@ -52,7 +52,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
     });
 
-    const data = await response.json();
+    const data: any = await response.json();
 
     if (response.ok) {
       const runData = data.data;

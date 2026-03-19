@@ -1,35 +1,50 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// 客户类型对应的邮件模板策略
+// 客户类型对应的邮件模板策略 - 与前端统一
 const EMAIL_TEMPLATES: Record<string, { name: string; focus: string; tone: string }> = {
+  factory: {
+    name: '工厂/OEM',
+    focus: '定制生产、技术支持、质量保证、OEM合作',
+    tone: '专业、技术',
+  },
+  distributor: {
+    name: '经销商',
+    focus: '批量采购优惠、快速发货、售后支持、区域代理',
+    tone: '商务、实惠',
+  },
   brand_agent: {
     name: '品牌代理商',
     focus: '品牌合作、市场推广、独家代理权',
     tone: '专业、合作共赢',
   },
-  distributor: {
-    name: '经销商',
-    focus: '批量采购优惠、快速发货、售后支持',
-    tone: '商务、实惠',
-  },
-  factory_oem: {
-    name: 'OEM工厂',
-    focus: '定制生产、技术支持、质量保证',
-    tone: '技术、专业',
-  },
   joint_venture: {
     name: '合资公司',
-    focus: '战略合作、长期发展、资源共享',
+    focus: '战略合作、长期发展、资源共享、共同投资',
     tone: '战略、长远',
+  },
+  supermarket: {
+    name: '商超',
+    focus: '稳定供货、产品陈列、促销支持、品类管理',
+    tone: '合作、稳定',
+  },
+  trading_company: {
+    name: '进出口商',
+    focus: '国际贸易、物流支持、关税优惠、市场信息',
+    tone: '专业、高效',
+  },
+  retailer: {
+    name: '零售商',
+    focus: '产品质量、价格优势、快速交付、售后保障',
+    tone: '友好、服务',
   },
   end_customer: {
     name: '终端客户',
-    focus: '产品质量、价格优势、快速交付',
+    focus: '产品质量、价格优势、快速交付、使用指导',
     tone: '友好、服务',
   },
   contractor: {
     name: '工程商',
-    focus: '项目供货、技术方案、工程配套',
+    focus: '项目供货、技术方案、工程配套、项目管理',
     tone: '专业、可靠',
   },
   service_provider: {
@@ -73,6 +88,208 @@ const COUNTRY_LANGUAGE_MAP: Record<string, string> = {
   'China': 'zh',
 };
 
+// AI 模型配置 - 支持多个免费模型（按优先级排序）
+const AI_MODELS = [
+  // 智谱 GLM 系列免费模型（优先使用）
+  {
+    name: 'GLM-4-Flash',
+    provider: 'zhipu',
+    url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+    model: 'glm-4-flash',
+    getModelParam: (apiKey: string) => ({
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: {
+        model: 'glm-4-flash',
+        messages: [] as Array<{role: string, content: string}>,
+        temperature: 0.7,
+        max_tokens: 1500,
+      },
+    }),
+    parseResponse: (data: any) => data.choices?.[0]?.message?.content || '',
+  },
+  {
+    name: 'GLM-4-Air',
+    provider: 'zhipu',
+    url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+    model: 'glm-4-air',
+    getModelParam: (apiKey: string) => ({
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: {
+        model: 'glm-4-air',
+        messages: [] as Array<{role: string, content: string}>,
+        temperature: 0.7,
+        max_tokens: 1500,
+      },
+    }),
+    parseResponse: (data: any) => data.choices?.[0]?.message?.content || '',
+  },
+  {
+    name: 'GLM-4-AirX',
+    provider: 'zhipu',
+    url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+    model: 'glm-4-airx',
+    getModelParam: (apiKey: string) => ({
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: {
+        model: 'glm-4-airx',
+        messages: [] as Array<{role: string, content: string}>,
+        temperature: 0.7,
+        max_tokens: 1500,
+      },
+    }),
+    parseResponse: (data: any) => data.choices?.[0]?.message?.content || '',
+  },
+  {
+    name: 'GLM-4-FlashX',
+    provider: 'zhipu',
+    url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+    model: 'glm-4-flashx',
+    getModelParam: (apiKey: string) => ({
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: {
+        model: 'glm-4-flashx',
+        messages: [] as Array<{role: string, content: string}>,
+        temperature: 0.7,
+        max_tokens: 1500,
+      },
+    }),
+    parseResponse: (data: any) => data.choices?.[0]?.message?.content || '',
+  },
+  {
+    name: 'GLM-3-Turbo',
+    provider: 'zhipu',
+    url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+    model: 'glm-3-turbo',
+    getModelParam: (apiKey: string) => ({
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: {
+        model: 'glm-3-turbo',
+        messages: [] as Array<{role: string, content: string}>,
+        temperature: 0.7,
+        max_tokens: 1500,
+      },
+    }),
+    parseResponse: (data: any) => data.choices?.[0]?.message?.content || '',
+  },
+  // DeepSeek 作为备用
+  {
+    name: 'DeepSeek-V3',
+    provider: 'deepseek',
+    url: 'https://api.deepseek.com/chat/completions',
+    model: 'deepseek-chat',
+    getModelParam: (apiKey: string) => ({
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: {
+        model: 'deepseek-chat',
+        messages: [] as Array<{role: string, content: string}>,
+        temperature: 0.7,
+        max_tokens: 1500,
+      },
+    }),
+    parseResponse: (data: any) => data.choices?.[0]?.message?.content || '',
+  },
+];
+
+// 调用单个 AI 模型
+async function callAIModel(
+  modelConfig: typeof AI_MODELS[0],
+  apiKey: string,
+  prompt: string
+): Promise<{ success: boolean; content?: string; error?: string }> {
+  try {
+    const modelParam = modelConfig.getModelParam(apiKey);
+    modelParam.body.messages = [{ role: 'user', content: prompt }];
+
+    const response = await fetch(modelConfig.url, {
+      method: 'POST',
+      headers: modelParam.headers,
+      body: JSON.stringify(modelParam.body),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json() as any;
+      return {
+        success: false,
+        error: errorData.error?.message || `${modelConfig.name} API 调用失败`,
+      };
+    }
+
+    const result = await response.json() as any;
+    const content = modelConfig.parseResponse(result);
+
+    if (!content) {
+      return { success: false, error: `${modelConfig.name} 返回内容为空` };
+    }
+
+    return { success: true, content };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : `${modelConfig.name} 调用异常`,
+    };
+  }
+}
+
+// 尝试所有 AI 模型，直到成功
+async function tryAllModels(
+  apiKeys: { zhipu?: string; deepseek?: string },
+  prompt: string
+): Promise<{ success: boolean; content?: string; usedModel?: string; error?: string }> {
+  const errors: string[] = [];
+
+  for (const modelConfig of AI_MODELS) {
+    // 获取对应的 API Key
+    let apiKey: string | undefined;
+    if (modelConfig.provider === 'zhipu') {
+      apiKey = apiKeys.zhipu;
+    } else if (modelConfig.provider === 'deepseek') {
+      apiKey = apiKeys.deepseek;
+    }
+
+    if (!apiKey) {
+      continue; // 没有配置该模型的 API Key，跳过
+    }
+
+    console.log(`[AI] 尝试模型: ${modelConfig.name}`);
+    const result = await callAIModel(modelConfig, apiKey, prompt);
+
+    if (result.success && result.content) {
+      console.log(`[AI] 成功使用模型: ${modelConfig.name}`);
+      return {
+        success: true,
+        content: result.content,
+        usedModel: modelConfig.name,
+      };
+    }
+
+    errors.push(`${modelConfig.name}: ${result.error}`);
+    console.log(`[AI] 模型 ${modelConfig.name} 失败: ${result.error}`);
+  }
+
+  return {
+    success: false,
+    error: `所有 AI 模型均失败: ${errors.join('; ')}`,
+  };
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -88,7 +305,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const {
-      apiKey,
+      apiKey, // 兼容旧版：智谱 API Key
+      deepseekApiKey, // 新增：DeepSeek API Key
       customerName,
       companyName,
       country,
@@ -98,8 +316,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       targetLanguage
     } = req.body;
 
-    if (!apiKey) {
-      return res.status(400).json({ error: 'API Key is required' });
+    // 至少需要一个 API Key
+    if (!apiKey && !deepseekApiKey) {
+      return res.status(400).json({ error: '至少需要配置一个 AI API Key' });
     }
 
     // 确定目标语言
@@ -143,30 +362,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 [CONTENT]
 邮件正文`;
 
-    const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'glm-4-flash',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 1500,
-      }),
-    });
+    // 尝试所有可用的 AI 模型
+    const apiKeys = {
+      zhipu: apiKey,
+      deepseek: deepseekApiKey,
+    };
 
-    if (!response.ok) {
-      const error = await response.json();
-      return res.status(response.status).json({
+    const result = await tryAllModels(apiKeys, prompt);
+
+    if (!result.success) {
+      return res.status(500).json({
         success: false,
-        error: error.error?.message || '智谱 API 调用失败'
+        error: result.error || 'AI 模型调用失败',
       });
     }
 
-    const result = await response.json();
-    const content = result.choices?.[0]?.message?.content || '';
+    const content = result.content || '';
+    console.log(`[AI] 最终使用模型: ${result.usedModel}`);
 
     // 解析返回的内容
     const subjectMatch = content.match(/\[SUBJECT\]\s*([\s\S]*?)\s*\[CONTENT\]/);
@@ -180,6 +392,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       subject,
       content: emailContent,
       language,
+      usedModel: result.usedModel,
     });
   } catch (error) {
     console.error('Generate email error:', error);

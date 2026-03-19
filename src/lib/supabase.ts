@@ -1,33 +1,64 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Supabase 配置 - 优先从环境变量获取，否则从 sessionStorage
+// Supabase 配置 - 单例模式
 let supabaseInstance: SupabaseClient | null = null;
+let isInitializing = false;
 
 // 环境变量配置
-const ENV_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const ENV_SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const ENV_SUPABASE_URL = (import.meta as any).env?.VITE_SUPABASE_URL;
+const ENV_SUPABASE_KEY = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY;
 
 export const initSupabase = (url: string, anonKey: string): SupabaseClient => {
-  supabaseInstance = createClient(url, anonKey);
-  // 保存到 sessionStorage 作为备份
+  // 如果已存在实例且配置相同，直接返回
+  if (supabaseInstance && !isInitializing) {
+    const storedUrl = sessionStorage.getItem('supabase_url');
+    if (storedUrl === url) {
+      return supabaseInstance;
+    }
+  }
+  
+  isInitializing = true;
+  supabaseInstance = createClient(url, anonKey, {
+    auth: {
+      storage: sessionStorage,
+      autoRefreshToken: true,
+      persistSession: true,
+    },
+  });
   sessionStorage.setItem('supabase_url', url);
   sessionStorage.setItem('supabase_anon_key', anonKey);
+  isInitializing = false;
   return supabaseInstance;
 };
 
 export const getSupabase = (): SupabaseClient | null => {
-  if (!supabaseInstance) {
-    // 优先使用环境变量配置
-    if (ENV_SUPABASE_URL && ENV_SUPABASE_KEY) {
-      supabaseInstance = createClient(ENV_SUPABASE_URL, ENV_SUPABASE_KEY);
-      return supabaseInstance;
-    }
-    // 否则尝试从 sessionStorage 恢复
-    const url = sessionStorage.getItem('supabase_url');
-    const key = sessionStorage.getItem('supabase_anon_key');
-    if (url && key) {
-      supabaseInstance = createClient(url, key);
-    }
+  if (supabaseInstance) {
+    return supabaseInstance;
+  }
+  
+  // 优先使用环境变量配置
+  if (ENV_SUPABASE_URL && ENV_SUPABASE_KEY) {
+    supabaseInstance = createClient(ENV_SUPABASE_URL, ENV_SUPABASE_KEY, {
+      auth: {
+        storage: sessionStorage,
+        autoRefreshToken: true,
+        persistSession: true,
+      },
+    });
+    return supabaseInstance;
+  }
+  
+  // 否则尝试从 sessionStorage 恢复
+  const url = sessionStorage.getItem('supabase_url');
+  const key = sessionStorage.getItem('supabase_anon_key');
+  if (url && key) {
+    supabaseInstance = createClient(url, key, {
+      auth: {
+        storage: sessionStorage,
+        autoRefreshToken: true,
+        persistSession: true,
+      },
+    });
   }
   return supabaseInstance;
 };
@@ -65,7 +96,10 @@ export interface Customer {
   contact_phone?: string;
   contact_email?: string;
   email_verified?: boolean;
+  phone_verified?: boolean;
   source_platform?: string;
+  source_url?: string;
+  raw_data?: string;
   created_at?: string;
   department_id?: string;
   status?: 'pending' | 'verified' | 'invalid';
@@ -90,6 +124,8 @@ export interface Department {
   name: string;
   region?: string;
   products?: string[];
+  allowed_channels?: string[];
+  is_new_department?: boolean;
   created_at?: string;
 }
 
@@ -117,11 +153,13 @@ export interface ScrapeTask {
   id?: string;
   platform: string;
   keywords?: string[];
-  country?: string[];
+  countries?: string[];
   industry?: string;
   status: 'pending' | 'running' | 'completed' | 'failed';
   results_count?: number;
+  emails_count?: number;
   department_id?: string;
+  actor_id?: string;
   apify_run_id?: string;
   error_message?: string;
   created_at?: string;
@@ -177,6 +215,7 @@ CREATE TABLE IF NOT EXISTS customers (
   contact_phone VARCHAR(100),
   contact_email VARCHAR(255),
   email_verified BOOLEAN DEFAULT FALSE,
+  phone_verified BOOLEAN DEFAULT FALSE,
   source_platform VARCHAR(100),
   source_url TEXT,
   department_id UUID REFERENCES departments(id),
@@ -184,6 +223,9 @@ CREATE TABLE IF NOT EXISTS customers (
   raw_data TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- 添加 phone_verified 字段（如果表已存在）
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS phone_verified BOOLEAN DEFAULT FALSE;
 
 -- 邮件营销表
 CREATE TABLE IF NOT EXISTS email_campaigns (
@@ -214,8 +256,7 @@ CREATE TABLE IF NOT EXISTS scrape_tasks (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   platform VARCHAR(100) NOT NULL,
   keywords TEXT[],
-  country text[],
-  countries TEXT,
+  countries TEXT[],
   actor_id VARCHAR(255),
   industry VARCHAR(100),
   status VARCHAR(50) DEFAULT 'pending',

@@ -18,11 +18,31 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
-  const { currentUser, setCurrentUser, setIsConfigured } = useStore();
+  const { currentUser, setCurrentUser, setCurrentDepartment, setIsConfigured } = useStore();
 
   useEffect(() => {
     initializeApp();
   }, []);
+
+  // 恢复用户的事业部信息（包含 allowed_channels）
+  const restoreUserDepartment = async (user: User) => {
+    const supabase = getSupabase();
+    if (!supabase || !user.department_id) return;
+
+    try {
+      const { data: deptData } = await supabase
+        .from('departments')
+        .select('id, name, region, products, allowed_channels')
+        .eq('id', user.department_id)
+        .single();
+
+      if (deptData) {
+        setCurrentDepartment(deptData as any);
+      }
+    } catch (err) {
+      console.error('Failed to restore department:', err);
+    }
+  };
 
   const initializeApp = async () => {
     setIsLoading(true);
@@ -42,6 +62,8 @@ const App: React.FC = () => {
               try {
                 const user = JSON.parse(savedUser) as User;
                 setCurrentUser(user);
+                // 恢复事业部信息（包含 allowed_channels）
+                await restoreUserDepartment(user);
               } catch {
                 sessionStorage.removeItem('yuantuo_user');
               }
@@ -86,6 +108,8 @@ const App: React.FC = () => {
           try {
             const user = JSON.parse(savedUser) as User;
             setCurrentUser(user);
+            // 恢复事业部信息（包含 allowed_channels）
+            await restoreUserDepartment(user);
           } catch {
             sessionStorage.removeItem('yuantuo_user');
           }

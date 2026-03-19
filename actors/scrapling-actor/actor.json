@@ -1,0 +1,11 @@
+{
+  "name": "scrapling-actor",
+  "version": "1.0.0",
+  "buildTag": "latest",
+  "env": null,
+  "minMemoryMbytes": 1024,
+  "maxMemoryMbytes": 4096,
+  "timeoutSecs": 3600,
+  "description": "基于 Scrapling 框架的自适应网页爬虫，支持反检测和自动元素追踪",
+  "mainEntryPoint": "main.py"
+}

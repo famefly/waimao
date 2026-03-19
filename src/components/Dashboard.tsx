@@ -65,7 +65,14 @@ export const Dashboard: React.FC = () => {
       return;
     }
 
+    // 添加超时保护 (30秒)
+    const timeout = setTimeout(() => {
+      setLoading(false);
+      console.warn('Dashboard loading timeout - please check network connection');
+    }, 30000);
+
     try {
+      console.log('Dashboard: Loading stats...');
       // --- 获取客户统计 ---
       let customerQuery = supabase.from('customers').select('*');
       if (currentDepartment) {
@@ -148,7 +155,12 @@ export const Dashboard: React.FC = () => {
 
     } catch (error) {
       console.error('加载统计数据失败:', error);
+      // 显示更详细的错误信息
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+      }
     } finally {
+      clearTimeout(timeout);
       setLoading(false);
     }
   };

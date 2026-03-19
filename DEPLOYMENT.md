@@ -102,7 +102,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- 客户表
 CREATE TABLE IF NOT EXISTS customers (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  country VARCHAR(100),
+  country TEXT[],
   company_name VARCHAR(255) NOT NULL,
   industry VARCHAR(255),
   main_products TEXT,
@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS customers (
   email_verified BOOLEAN DEFAULT FALSE,
   source_platform VARCHAR(100),
   source_url TEXT,
-  raw_data JSONB,
+  raw_data TEXT,
   department_id UUID REFERENCES departments(id),
   status VARCHAR(50) DEFAULT 'pending',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -149,8 +149,7 @@ CREATE TABLE IF NOT EXISTS api_configs (
 CREATE TABLE IF NOT EXISTS scrape_tasks (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   platform VARCHAR(100) NOT NULL,
-  keywords TEXT,
-  country VARCHAR(100),
+  keywords TEXT[],
   countries TEXT[],
   actor_id VARCHAR(255),
   industry VARCHAR(100),
@@ -202,6 +201,41 @@ CREATE POLICY "Allow all" ON email_templates FOR ALL USING (true);
 
 4. 点击 "Run" 执行
 
+### 步骤 4: 更新现有数据库（如果已有数据）
+
+如果您的数据库已经存在，需要执行以下增量更新：
+
+```sql
+-- 更新 customers 表的 country 字段为数组类型
+ALTER TABLE customers 
+ALTER COLUMN country TYPE TEXT[] USING 
+  CASE 
+    WHEN country IS NULL THEN NULL
+    WHEN country = '' THEN NULL
+    ELSE ARRAY[country]
+  END;
+
+-- 更新 scrape_tasks 表
+-- 1. 确保 keywords 是数组类型
+ALTER TABLE scrape_tasks 
+ALTER COLUMN keywords TYPE TEXT[] USING 
+  CASE 
+    WHEN keywords IS NULL THEN NULL
+    ELSE string_to_array(keywords::text, ', ')
+  END;
+
+-- 2. 确保 countries 字段存在且为数组类型
+ALTER TABLE scrape_tasks 
+DROP COLUMN IF EXISTS country;
+
+ALTER TABLE scrape_tasks 
+ALTER COLUMN countries TYPE TEXT[] USING 
+  CASE 
+    WHEN countries IS NULL THEN NULL
+    ELSE string_to_array(countries::text, ', ')
+  END;
+```
+
 ---
 
 ## 四、Vercel 部署
@@ -245,9 +279,22 @@ CREATE POLICY "Allow all" ON email_templates FOR ALL USING (true);
 
 ### 步骤 4: 部署
 
+#### 方式 1：通过 Vercel 网站部署
 1. 点击 "Deploy"
 2. 等待部署完成
 3. 获取部署 URL（如 `https://your-app.vercel.app`）
+
+#### 方式 2：通过 CLI 部署
+```bash
+# 安装 Vercel CLI（如果未安装）
+npm install -g vercel
+
+# 登录 Vercel
+vercel login
+
+# 部署到生产环境
+vercel --prod --yes
+```
 
 ---
 
@@ -310,6 +357,7 @@ CREATE POLICY "Allow all" ON email_templates FOR ALL USING (true);
 | `/api/run-apify` | 启动 Apify Actor 抓取任务 |
 | `/api/apify-status` | 获取抓取任务状态 |
 | `/api/apify-results` | 获取抓取结果 |
+| `/api/scrape` | 启动抓取任务（前端调用入口） |
 | `/api/send-email` | 发送邮件 |
 | `/api/generate-email` | AI 生成开发信 |
 | `/api/verify-email` | 验证邮箱有效性 |
@@ -379,9 +427,28 @@ A: 检查：
 ### Q: 本地开发 API 调用 404
 A: 本地开发需要使用 `npm run dev:vercel` 启动，它会同时启动 Vite 和 Vercel dev server。
 
+### Q: 抓取任务报错，提示字段类型错误
+A: 请确保数据库字段已更新为数组类型（TEXT[]）：
+- `customers.country` 应为 TEXT[]
+- `scrape_tasks.keywords` 应为 TEXT[]
+- `scrape_tasks.countries` 应为 TEXT[]
+执行本文档中"步骤 4"的增量更新 SQL。
+
 ---
 
 ## 十、更新日志
+
+### v1.1.0 (2026-03-16)
+- **重要修复**: 修复多选国家/关键词时数组字段处理错误
+- 修复 `api/route.ts` 导入路径错误
+- 修复 `ScrapeTask` 接口字段名不一致问题
+- 新增 `/api/scrape.ts` 路由文件
+- 更新数据库字段类型：
+  - `customers.country` 改为 TEXT[]（支持多国家）
+  - `scrape_tasks.keywords` 改为 TEXT[]（支持多关键词）
+  - `scrape_tasks.countries` 改为 TEXT[]（支持多国家）
+- 修复 TypeScript 类型错误
+- 优化前端数组字段显示逻辑
 
 ### v1.0.0 (2026-03-12)
 - 初始版本

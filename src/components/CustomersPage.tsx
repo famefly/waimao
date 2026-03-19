@@ -19,9 +19,13 @@ import toast from 'react-hot-toast';
 
 const channelTypes = [
   { value: '', label: '全部类型' },
-  { value: 'factory_oem', label: 'OEM工厂' },
+  { value: 'factory', label: '工厂/OEM' },
   { value: 'distributor', label: '经销商' },
   { value: 'brand_agent', label: '品牌代理商' },
+  { value: 'joint_venture', label: '合资公司' },
+  { value: 'supermarket', label: '商超' },
+  { value: 'trading_company', label: '进出口商' },
+  { value: 'retailer', label: '零售商' },
   { value: 'end_customer', label: '终端客户' },
   { value: 'contractor', label: '工程商' },
   { value: 'service_provider', label: '服务商' },
@@ -86,12 +90,37 @@ export const CustomersPage: React.FC = () => {
       // 我们将在前端进行筛选，这样更灵活。
       
       const { data } = await query;
-      const customerList = (data || []) as Customer[];
-      setCustomers(customerList);
+      const rawCustomerList = (data || []) as Customer[];
+      
+      // 数据去重：基于邮箱+公司名（两者都相同才视为重复）
+      const seenKeys = new Set<string>();
+      const deduplicatedList: Customer[] = [];
+      let duplicateCount = 0;
+      
+      for (const customer of rawCustomerList) {
+        // 构建去重键：邮箱（小写）+ 公司名（小写，去除空格）
+        const email = (customer.contact_email || '').toLowerCase().trim();
+        const company = (customer.company_name || '').toLowerCase().trim();
+        const dedupeKey = `${email}|${company}`;
+        
+        if (!seenKeys.has(dedupeKey)) {
+          seenKeys.add(dedupeKey);
+          deduplicatedList.push(customer);
+        } else {
+          duplicateCount++;
+        }
+      }
+      
+      setCustomers(deduplicatedList);
+
+      // 显示去重信息
+      if (duplicateCount > 0) {
+        toast.success(`已自动去除 ${duplicateCount} 条重复数据`);
+      }
 
       // 修改 2: 提取所有国家列表
       // 因为 country 现在是数组，我们需要先展平数组，再去重
-      const allCountries = customerList.flatMap(c => c.country || []);
+      const allCountries = deduplicatedList.flatMap(c => c.country || []);
       const uniqueCountries = [...new Set(allCountries)].sort();
       setCountries(uniqueCountries);
 
@@ -206,25 +235,47 @@ export const CustomersPage: React.FC = () => {
     }
   };
 
-  // 修改 4: 导出逻辑 - 将数组转为字符串
+  // 修改 4: 导出逻辑 - 将数组转为字符串，包含所有字段
   const exportToExcel = () => {
     const exportData = filteredCustomers.map(c => ({
-      '国家': (c.country || []).join(', '), // <--- 修改：数组转字符串
-      '公司名称': c.company_name,
-      '行业': c.industry,
-      '主营产品': c.main_products,
-      '渠道类型': channelTypes.find(t => t.value === c.channel_type)?.label || c.channel_type,
-      '年营业额': c.annual_revenue,
-      '年采购量': c.annual_purchase,
-      '联系人': c.contact_name,
-      '电话': c.contact_phone,
-      '邮箱': c.contact_email,
+      '国家': (c.country || []).join(', '),
+      '公司名称': c.company_name || '',
+      '行业': c.industry || '',
+      '主营产品': c.main_products || '',
+      '渠道类型': channelTypes.find(t => t.value === c.channel_type)?.label || c.channel_type || '',
+      '年营业额': c.annual_revenue || '',
+      '年采购量': c.annual_purchase || '',
+      '联系人': c.contact_name || '',
+      '电话': c.contact_phone || '',
+      '邮箱': c.contact_email || '',
       '邮箱验证': c.email_verified ? '有效' : '未验证',
-      '数据来源': c.source_platform,
-      '状态': statusFilters.find(s => s.value === c.status)?.label || c.status,
+      '数据来源平台': c.source_platform || '',
+      '数据来源URL': c.source_url || '',
+      '状态': statusFilters.find(s => s.value === c.status)?.label || c.status || '',
+      '创建时间': c.created_at ? new Date(c.created_at).toLocaleString('zh-CN') : '',
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
+    
+    // 设置列宽
+    ws['!cols'] = [
+      { wch: 15 }, // 国家
+      { wch: 30 }, // 公司名称
+      { wch: 20 }, // 行业
+      { wch: 30 }, // 主营产品
+      { wch: 12 }, // 渠道类型
+      { wch: 15 }, // 年营业额
+      { wch: 15 }, // 年采购量
+      { wch: 15 }, // 联系人
+      { wch: 20 }, // 电话
+      { wch: 30 }, // 邮箱
+      { wch: 10 }, // 邮箱验证
+      { wch: 15 }, // 数据来源平台
+      { wch: 40 }, // 数据来源URL
+      { wch: 10 }, // 状态
+      { wch: 20 }, // 创建时间
+    ];
+    
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, '客户数据');
     XLSX.writeFile(wb, `客户数据_${new Date().toISOString().split('T')[0]}.xlsx`);

@@ -6,7 +6,6 @@ import {
   Linkedin,
   Instagram,
   Facebook,
-  Twitter,
   Play,
   Loader2,
   CheckCircle,
@@ -15,6 +14,12 @@ import {
   X,
   RefreshCw,
   AlertTriangle,
+  Phone,
+  FileText,
+  Trash2,
+  Factory,
+  Rocket,
+  ShoppingBag,
 } from 'lucide-react';
 import { getSupabase } from '../lib/supabase';
 import { useStore } from '../store/useStore';
@@ -35,46 +40,228 @@ interface ScrapeTask {
 }
 
 // Apify Actor 配置
+// 优先选择带邮箱的高价值渠道
 const APIFY_ACTORS = [
+  // ===== 高价值渠道（带邮箱）=====
+  {
+    id: 'code_crafter/leads-finder',
+    name: 'Leads Finder (强烈推荐)',
+    platform: 'leads_finder',
+    icon: Search,
+    color: 'bg-purple-600',
+    supportsEmail: true,
+    emailRate: '高',
+    description: '类似Apollo，直接返回验证邮箱！$1.5/千条，可按职位、行业、公司规模筛选',
+    pricing: '$1.5/千条',
+    category: 'high_value',
+  },
+  {
+    id: 'memo23/thomasnet-scraper',
+    name: 'ThomasNet (美国工业)',
+    platform: 'thomasnet',
+    icon: Factory,
+    color: 'bg-orange-600',
+    supportsEmail: true,
+    emailRate: '高',
+    description: '美国最大工业供应商目录，包含公司、电话、网站、员工数',
+    pricing: '$5/千条',
+    category: 'high_value',
+  },
+  {
+    id: 'curious_coder/crunchbase-scraper',
+    name: 'Crunchbase (科技公司)',
+    platform: 'crunchbase',
+    icon: Rocket,
+    color: 'bg-indigo-600',
+    supportsEmail: true,
+    emailRate: '高',
+    description: '全球创业公司数据库，包含融资信息、创始人联系方式',
+    pricing: '$2.5/千条',
+    category: 'high_value',
+  },
+  
+  // ===== 海关数据（高价值，需配置）=====
+  {
+    id: 'custom/customs-data-scraper',
+    name: '海关数据 (进阶)',
+    platform: 'customs_data',
+    icon: FileText,
+    color: 'bg-teal-600',
+    supportsEmail: true,
+    emailRate: '中',
+    description: '进出口贸易数据，获取真实采购商信息，需要配置第三方API',
+    pricing: '需配置API',
+    category: 'customs',
+  },
+  
+  // ===== B2B 平台 =====
+  {
+    id: 'adrian_horning/alibaba-scraper',
+    name: 'Alibaba 供应商',
+    platform: 'alibaba',
+    icon: ShoppingBag,
+    color: 'bg-orange-500',
+    supportsEmail: false,
+    emailRate: '网站URL',
+    description: '抓取阿里巴巴供应商信息，适合找工厂和经销商',
+    pricing: '按使用量计费',
+    category: 'b2b',
+  },
+  {
+    id: 'memo23/made-in-china-scraper',
+    name: 'Made-in-China',
+    platform: 'made_in_china',
+    icon: Factory,
+    color: 'bg-red-600',
+    supportsEmail: false,
+    emailRate: '网站URL',
+    description: '中国制造网供应商信息',
+    pricing: '按使用量计费',
+    category: 'b2b',
+  },
+  
+  // ===== Amazon卖家 =====
+  {
+    id: 'junglee/amazon-seller-scraper',
+    name: 'Amazon卖家 (进口商)',
+    platform: 'amazon_seller',
+    icon: ShoppingBag,
+    color: 'bg-amber-500',
+    supportsEmail: false,
+    emailRate: '网站URL',
+    description: '抓取亚马逊卖家信息，这些卖家很多是进口商',
+    pricing: '按使用量计费',
+    category: 'ecommerce',
+  },
+  
+  // ===== Google Maps（基础渠道）=====
   {
     id: 'compass/crawler-google-places',
-    name: 'Google Maps (带邮箱)',
+    name: 'Google Maps',
     platform: 'google_maps',
     icon: MapPin,
     color: 'bg-red-500',
-    supportsEmail: true,
+    supportsEmail: false,
+    emailRate: '网站URL',
+    description: '获取商家名称、地址、电话、网站URL，邮箱需后续提取',
+    pricing: '$2/千条',
+    category: 'basic',
+  },
+  
+  // ===== 商业目录 =====
+  {
+    id: 'trudax/yellow-pages-us-scraper',
+    name: 'Yellow Pages (美国)',
+    platform: 'yellow_pages',
+    icon: FileText,
+    color: 'bg-yellow-500',
+    supportsEmail: false,
+    emailRate: '网站URL',
+    description: '美国黄页，获取商家名称、地址、电话、网站URL',
+    pricing: '按使用量计费',
+    category: 'directory',
   },
   {
-    id: 'curious_coder/facebook-pages-scraper',
-    name: 'Facebook Pages',
-    platform: 'facebook',
-    icon: Facebook,
-    color: 'bg-blue-600',
-    supportsEmail: true,
+    id: 'canadesk/yellow-pages-scraper',
+    name: 'Yellow Pages (全球)',
+    platform: 'yellow_pages_world',
+    icon: FileText,
+    color: 'bg-yellow-600',
+    supportsEmail: false,
+    emailRate: '网站URL',
+    description: '全球黄页，支持多国商家搜索',
+    pricing: '按使用量计费',
+    category: 'directory',
   },
   {
-    id: 'apify/instagram-profile-scraper',
-    name: 'Instagram Profile',
-    platform: 'instagram',
-    icon: Instagram,
-    color: 'bg-pink-500',
-    supportsEmail: true,
+    id: 'tri_angle/yelp-scraper',
+    name: 'Yelp Business',
+    platform: 'yelp',
+    icon: Phone,
+    color: 'bg-red-600',
+    supportsEmail: false,
+    emailRate: '电话',
+    description: '获取商家名称、地址、电话',
+    pricing: '按使用量计费',
+    category: 'directory',
   },
+  
+  // ===== 社交媒体 =====
   {
-    id: 'anchor/linkedin-company-scraper',
-    name: 'LinkedIn Companies (带邮箱)',
+    id: 'apimaestro/linkedin-profile-search-scraper',
+    name: 'LinkedIn',
     platform: 'linkedin',
     icon: Linkedin,
     color: 'bg-blue-700',
     supportsEmail: true,
+    emailRate: '邮箱发现',
+    description: '无需登录，支持职位搜索+邮箱发现',
+    pricing: '$5/千条',
+    category: 'social',
   },
   {
-    id: 'quacker/twitter-scraper',
-    name: 'Twitter/X',
-    platform: 'twitter',
-    icon: Twitter,
-    color: 'bg-black',
+    id: 'apify/facebook-pages-scraper',
+    name: 'Facebook Pages',
+    platform: 'facebook',
+    icon: Facebook,
+    color: 'bg-blue-600',
     supportsEmail: false,
+    emailRate: '网站URL',
+    description: '获取商家名称、网站URL',
+    pricing: '按使用量计费',
+    category: 'social',
+  },
+  {
+    id: 'apify/instagram-search-scraper',
+    name: 'Instagram Search',
+    platform: 'instagram',
+    icon: Instagram,
+    color: 'bg-pink-500',
+    supportsEmail: false,
+    emailRate: '无',
+    description: '获取账号信息，无邮箱',
+    pricing: '按使用量计费',
+    category: 'social',
+  },
+  
+  // ===== 论坛/社区 =====
+  {
+    id: 'peghin/ai-forum-scraper-stack-overflow-quora-reddit-more',
+    name: '论坛抓取',
+    platform: 'forum',
+    icon: Globe,
+    color: 'bg-gray-700',
+    supportsEmail: false,
+    emailRate: '无',
+    description: '获取论坛讨论，无邮箱',
+    pricing: '按使用量计费',
+    category: 'forum',
+  },
+  {
+    id: 'trudax/reddit-scraper',
+    name: 'Reddit 社区',
+    platform: 'reddit',
+    icon: Globe,
+    color: 'bg-orange-700',
+    supportsEmail: false,
+    emailRate: '无',
+    description: 'Reddit 社区讨论，发现潜在客户需求',
+    pricing: '按使用量计费',
+    category: 'forum',
+  },
+  
+  // ===== 自定义爬虫 =====
+  {
+    id: 'maiboxuan/scrapling-actor',
+    name: 'Scrapling (自适应爬虫)',
+    platform: 'scrapling',
+    icon: Globe,
+    color: 'bg-violet-600',
+    supportsEmail: false,
+    emailRate: '自动提取',
+    description: '自适应爬虫，自动绕过反爬检测，支持任意网站',
+    pricing: '按使用量计费',
+    category: 'custom',
   },
 ];
 
@@ -247,6 +434,39 @@ export const ScrapePage: React.FC = () => {
     loadTasks();
   }, [loadConfiguredActors, loadTasks]);
 
+  // 自动轮询检查任务状态
+  useEffect(() => {
+    const checkRunningTasks = async () => {
+      const hasRunningTasks = tasks.some(t => t.status === 'running' || t.status === 'pending');
+      if (!hasRunningTasks || !apifyToken) return;
+
+      try {
+        const response = await fetch('/api/check-tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apiKey: apifyToken }),
+        });
+
+        const result = await response.json();
+        if (result.success && result.updated > 0) {
+          loadTasks(); // 刷新任务列表
+        }
+      } catch (error) {
+        console.error('检查任务状态失败:', error);
+      }
+    };
+
+    // 每10秒检查一次
+    const interval = setInterval(checkRunningTasks, 10000);
+    
+    // 立即检查一次
+    if (tasks.some(t => t.status === 'running' || t.status === 'pending')) {
+      checkRunningTasks();
+    }
+
+    return () => clearInterval(interval);
+  }, [tasks, apifyToken, loadTasks]);
+
   const toggleActor = (actorId: string) => {
     setSelectedActors(prev =>
       prev.includes(actorId)
@@ -313,12 +533,18 @@ export const ScrapePage: React.FC = () => {
     }
 
     setIsRunning(true);
-    setProgress({ current: 0, total: selectedActors.length, status: '准备中...', platform: '' });
+    
+    // 计算总任务数：每个平台 x 每个国家
+    const totalTasks = selectedActors.length * selectedCountries.length;
+    setProgress({ current: 0, total: totalTasks, status: '准备中...', platform: '' });
 
     const countryNames = selectedCountries.map(
       code => ALL_COUNTRIES.find(c => c.code === code)?.name || code
     );
 
+    let taskIndex = 0;
+
+    // 为每个平台和每个国家创建单独的任务
     for (let i = 0; i < selectedActors.length; i++) {
       const actorId = selectedActors[i];
       const actor = APIFY_ACTORS.find(a => a.id === actorId);
@@ -326,84 +552,87 @@ export const ScrapePage: React.FC = () => {
       if (!actor) continue;
 
       const platformName = actor.name;
-      setProgress({
-        current: i + 1,
-        total: selectedActors.length,
-        status: `正在抓取...`,
-        platform: platformName,
-      });
 
-      // 创建任务记录
-      const { data: taskData, error: taskError } = await supabase
-        .from('scrape_tasks')
-        .insert({
-          platform: actor.platform,
-          keywords: keywords,
-          countries: countryNames,
-          actor_id: actorId,
-          industry: selectedIndustry,
-          status: 'pending',
-          department_id: currentDepartment?.id,
-          results_count: 0,
-          emails_count: 0,
-        } as never)
-        .select()
-        .single();
-
-      if (taskError) {
-        console.error('创建任务失败:', taskError);
-        toast.error('创建任务失败');
-        continue;
-      }
-
-      const taskId = (taskData as unknown as { id: string })?.id;
-
-      try {
-        // 使用 apifyservices 中的 buildActorInput 函数构建输入参数
-        const { input } = buildActorInput(actor.platform, {
-          keywords,
-          countries: countryNames,
-          industry: selectedIndustry,
-          maxResults,
+      for (let j = 0; j < countryNames.length; j++) {
+        const countryName = countryNames[j];
+        taskIndex++;
+        
+        setProgress({
+          current: taskIndex,
+          total: totalTasks,
+          status: `正在抓取 ${countryName}...`,
+          platform: platformName,
         });
 
-        // 调用后端 API 来启动抓取任务
-        const response = await fetch('/api/scrape', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            taskId,
-            actorId,
-            input,
-          }),
-        });
+        // 创建任务记录 - 每个国家单独一个任务
+        const { data: taskData, error: taskError } = await supabase
+          .from('scrape_tasks')
+          .insert({
+            platform: actor.platform,
+            keywords: keywords,
+            countries: [countryName], // 单个国家
+            actor_id: actorId,
+            industry: selectedIndustry,
+            status: 'pending',
+            department_id: currentDepartment?.id,
+            results_count: 0,
+            emails_count: 0,
+          } as never)
+          .select()
+          .single();
 
-        if (!response.ok) {
-          throw new Error(`API 错误: ${response.status}`);
+        if (taskError) {
+          console.error('创建任务失败:', taskError);
+          toast.error(`创建任务失败: ${platformName} - ${countryName}`);
+          continue;
         }
+
+        const taskId = (taskData as unknown as { id: string })?.id;
+
+        try {
+          // 使用 apifyservices 中的 buildActorInput 函数构建输入参数
+          // 注意：这里只传入单个国家
+          const { input } = buildActorInput(actor.platform, {
+            keywords,
+            countries: [countryName], // 单个国家
+            industry: selectedIndustry,
+            maxResults,
+          });
+
+          // 调用 run-apify API 来启动抓取任务
+          const response = await fetch('/api/run-apify', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              apiKey: apifyToken,
+              actorId,
+              input,
+            }),
+          });
 
         const result = await response.json();
 
-        if (result.error) {
-          throw new Error(result.error);
+        if (!response.ok || !result.success || result.error) {
+          throw new Error(result.error || result.details || `API 错误: ${response.status}`);
         }
 
-        // 更新任务状态为运行中
+        // 更新任务状态和 apify_run_id
         await supabase
           .from('scrape_tasks')
           .update({
             status: 'running',
+            apify_run_id: result.runId,
           } as never)
           .eq('id', taskId);
 
-        toast.success(`${platformName} 抓取任务已启动`);
+        toast.success(`${platformName} - ${countryName} 抓取任务已启动`);
         
         addNotification({
           type: 'success',
           title: '抓取任务已启动',
-          message: `${platformName} 抓取任务已启动，将在后台运行`,
+          message: `${platformName} - ${countryName} 抓取任务已启动，将在后台运行`,
         });
 
       } catch (error) {
@@ -424,14 +653,16 @@ export const ScrapePage: React.FC = () => {
         addNotification({
           type: 'error',
           title: '启动抓取任务失败',
-          message: `${platformName} 启动失败: ${errorMsg}`,
+          message: `${platformName} - ${countryName} 启动失败: ${errorMsg}`,
         });
       }
-    }
+      } // 内层国家循环结束
+    } // 外层平台循环结束
 
     setIsRunning(false);
     setProgress({ current: 0, total: 0, status: '', platform: '' });
     loadTasks();
+    toast.success(`已创建 ${taskIndex} 个抓取任务，请等待结果...`);
   };
 
   const retryTask = async (task: ScrapeTask) => {
@@ -450,9 +681,71 @@ export const ScrapePage: React.FC = () => {
     toast('已加载任务配置，请点击"开始抓取"重试');
   };
 
-  const availableActors = APIFY_ACTORS.filter(
-    actor => configuredActors.length === 0 || configuredActors.includes(actor.id)
-  );
+  // 删除单个任务
+  const deleteTask = async (taskId: string) => {
+    if (!confirm('确定要删除这个任务吗？')) return;
+    
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    try {
+      await supabase.from('scrape_tasks').delete().eq('id', taskId);
+      toast.success('任务已删除');
+      loadTasks();
+    } catch (error) {
+      toast.error('删除失败');
+    }
+  };
+
+  // 清空所有已完成的任务
+  const clearCompletedTasks = async () => {
+    const completedTasks = tasks.filter(t => t.status === 'completed');
+    if (completedTasks.length === 0) {
+      toast.error('没有已完成的任务');
+      return;
+    }
+    
+    if (!confirm(`确定要清空 ${completedTasks.length} 个已完成的任务吗？\n\n注意：这不会删除已导入的客户数据。`)) return;
+    
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    try {
+      const ids = completedTasks.map(t => t.id);
+      await supabase.from('scrape_tasks').delete().in('id', ids);
+      toast.success(`已清空 ${completedTasks.length} 个任务`);
+      loadTasks();
+    } catch (error) {
+      toast.error('清空失败');
+    }
+  };
+
+  // 根据事业部的渠道权限过滤可用渠道
+  const departmentChannels = (currentDepartment as any)?.allowed_channels || [];
+  
+  // 调试日志
+  console.log('[渠道过滤] currentDepartment:', currentDepartment);
+  console.log('[渠道过滤] allowed_channels:', departmentChannels);
+  console.log('[渠道过滤] configuredActors:', configuredActors);
+  
+  const availableActors = APIFY_ACTORS.filter(actor => {
+    // 首先检查是否在配置的 actors 中
+    const isConfigured = configuredActors.length === 0 || configuredActors.includes(actor.id);
+    if (!isConfigured) return false;
+    
+    // 如果事业部设置了渠道权限，则只显示允许的渠道
+    if (departmentChannels.length > 0) {
+      // 支持两种匹配方式：actor.id 或 actor.platform
+      const isAllowed = departmentChannels.includes(actor.id) || departmentChannels.includes(actor.platform);
+      return isAllowed;
+    }
+    
+    // 如果没有设置渠道权限，则显示所有配置的渠道
+    return true;
+  });
+  
+  // 调试过滤结果
+  console.log('[渠道过滤] availableActors:', availableActors.map(a => a.id));
 
   const regions = [...new Set(ALL_COUNTRIES.map(c => c.region))];
 
@@ -470,6 +763,18 @@ export const ScrapePage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* 渠道提示 */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start">
+          <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+            <AlertTriangle className="w-4 h-4 text-blue-600" />
+          </div>
+          <div className="flex-1">
+            <p className="text-blue-800">要加更多的获客渠道，请联系后台管理员。</p>
+          </div>
+        </div>
+      </div>
 
       {/* 抓取配置 */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -646,6 +951,37 @@ export const ScrapePage: React.FC = () => {
           </div>
         </div>
 
+        {/* 预估数量显示 */}
+        <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6 text-sm">
+              <div className="flex items-center">
+                <span className="text-gray-600 mr-2">平台数:</span>
+                <span className="font-bold text-blue-600">{selectedActors.length}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-gray-600 mr-2">国家数:</span>
+                <span className="font-bold text-blue-600">{selectedCountries.length}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-gray-600 mr-2">关键词数:</span>
+                <span className="font-bold text-blue-600">{keywords.length}</span>
+              </div>
+              <div className="h-4 w-px bg-gray-300"></div>
+              <div className="flex items-center">
+                <span className="text-gray-600 mr-2">预估搜索数量:</span>
+                <span className="font-bold text-purple-600 text-lg">
+                  {(selectedActors.length * selectedCountries.length * keywords.length).toLocaleString()}
+                </span>
+                <span className="text-gray-500 text-xs ml-1">（平台×国家×关键词）</span>
+              </div>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            实际结果数量可能因平台限制和数据可用性而有所不同
+          </p>
+        </div>
+
         {/* 开始按钮 */}
         <div className="flex items-center justify-between">
           <button
@@ -691,13 +1027,22 @@ export const ScrapePage: React.FC = () => {
             <Globe className="w-5 h-5 mr-2 text-purple-600" />
             抓取历史
           </h3>
-          <button
-            onClick={loadTasks}
-            className="flex items-center text-sm text-gray-600 hover:text-gray-800"
-          >
-            <RefreshCw className="w-4 h-4 mr-1" />
-            刷新
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={clearCompletedTasks}
+              className="flex items-center text-sm text-gray-600 hover:text-red-600"
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              清空已完成
+            </button>
+            <button
+              onClick={loadTasks}
+              className="flex items-center text-sm text-gray-600 hover:text-gray-800"
+            >
+              <RefreshCw className="w-4 h-4 mr-1" />
+              刷新
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -777,14 +1122,24 @@ export const ScrapePage: React.FC = () => {
                         {new Date(task.createdAt).toLocaleString('zh-CN')}
                       </td>
                       <td className="py-3 px-4">
-                        {task.status === 'failed' && (
-                          <button
-                            onClick={() => retryTask(task)}
-                            className="text-sm text-blue-600 hover:text-blue-700"
-                          >
-                            重试
-                          </button>
-                        )}
+                        <div className="flex items-center gap-3">
+                          {task.status === 'failed' && (
+                            <button
+                              onClick={() => retryTask(task)}
+                              className="text-sm text-blue-600 hover:text-blue-700"
+                            >
+                              重试
+                            </button>
+                          )}
+                          {task.status !== 'running' && (
+                            <button
+                              onClick={() => deleteTask(task.id)}
+                              className="text-sm text-red-600 hover:text-red-700"
+                            >
+                              删除
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

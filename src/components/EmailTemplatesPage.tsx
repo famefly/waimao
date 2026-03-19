@@ -6,14 +6,16 @@ import toast from 'react-hot-toast';
 
 // 客户类型选项
 const CHANNEL_TYPES = [
-  { value: 'brand_agent', label: '品牌代理商', color: 'bg-purple-100 text-purple-800' },
-  { value: 'distributor', label: '经销商', color: 'bg-blue-100 text-blue-800' },
   { value: 'factory', label: '工厂/OEM', color: 'bg-orange-100 text-orange-800' },
+  { value: 'distributor', label: '经销商', color: 'bg-blue-100 text-blue-800' },
+  { value: 'brand_agent', label: '品牌代理商', color: 'bg-purple-100 text-purple-800' },
   { value: 'joint_venture', label: '合资公司', color: 'bg-green-100 text-green-800' },
+  { value: 'supermarket', label: '商超', color: 'bg-red-100 text-red-800' },
+  { value: 'trading_company', label: '进出口商', color: 'bg-indigo-100 text-indigo-800' },
+  { value: 'retailer', label: '零售商', color: 'bg-teal-100 text-teal-800' },
   { value: 'end_customer', label: '终端客户', color: 'bg-cyan-100 text-cyan-800' },
   { value: 'contractor', label: '工程商', color: 'bg-yellow-100 text-yellow-800' },
   { value: 'service_provider', label: '服务商', color: 'bg-pink-100 text-pink-800' },
-  { value: 'supermarket', label: '商超', color: 'bg-red-100 text-red-800' },
 ];
 
 // 语言选项
@@ -267,6 +269,70 @@ Why stock our products:
 We have experience working with major retail chains and understand the requirements of retail partnerships.
 
 I would be happy to send product catalogs and discuss potential terms.
+
+Best regards,
+{{sender_name}}
+Yuantuo Building Materials Group`,
+  },
+  // 进出口商
+  {
+    name: '进出口商合作 - 英文',
+    channel_type: 'trading_company',
+    language: 'en',
+    subject_template: 'International Trade Partnership - Building Materials',
+    content_template: `Dear {{contact_name}},
+
+I am {{sender_name}} from Yuantuo Building Materials Group. I am reaching out to explore potential trade partnership opportunities with {{company_name}}.
+
+As a leading Chinese manufacturer of scaffolding and formwork systems, we understand the unique needs of international trading companies like yours in {{country}}.
+
+Our advantages for trading partners:
+✓ Factory-direct competitive pricing
+✓ Flexible MOQ for trial orders
+✓ Professional export documentation
+✓ Multiple shipping options (FOB, CIF, DDP)
+✓ Multilingual product support
+
+We can support your business with:
+• Complete product range for construction sector
+• Custom branding and packaging options
+• Market intelligence and product trends
+• Reliable quality with international certifications
+
+I would welcome the opportunity to discuss how we can support your import business. May I arrange a brief call at your convenience?
+
+Best regards,
+{{sender_name}}
+Yuantuo Building Materials Group`,
+  },
+  // 零售商
+  {
+    name: '零售商合作 - 英文',
+    channel_type: 'retailer',
+    language: 'en',
+    subject_template: 'Quality Building Products for Your Store',
+    content_template: `Dear {{contact_name}},
+
+I hope this message finds you well. I am {{sender_name}} from Yuantuo Building Materials Group.
+
+We noticed {{company_name}}'s excellent presence in the {{industry}} retail sector in {{country}}, and believe our construction products could be a great addition to your inventory.
+
+Our retail-friendly products include:
+• DIY scaffolding and work platforms
+• Construction tools and accessories
+• Safety equipment
+• Storage and organization solutions
+
+Benefits for your retail business:
+✓ Attractive profit margins
+✓ Small order quantities accepted
+✓ Professional retail packaging
+✓ Point-of-sale display materials
+✓ Consistent quality and supply
+
+We are committed to supporting our retail partners with competitive pricing and reliable service.
+
+Would you be interested in reviewing our product catalog and discussing potential cooperation?
 
 Best regards,
 {{sender_name}}

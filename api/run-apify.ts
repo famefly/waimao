@@ -54,7 +54,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: JSON.stringify(input || {}),
     });
 
-    const data = await response.json();
+    const data: any = await response.json();
 
     if (response.ok) {
       // 4. 成功处理
