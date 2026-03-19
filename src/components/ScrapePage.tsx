@@ -34,6 +34,7 @@ interface ScrapeTask {
   status: 'pending' | 'running' | 'completed' | 'failed';
   resultsCount: number;
   emailsCount: number;
+  apifyRunId?: string;
   errorMessage?: string;
   createdAt: string;
 }
@@ -343,6 +344,7 @@ export const ScrapePage: React.FC = () => {
             status: string;
             results_count: number;
             emails_count: number;
+            apify_run_id?: string;
             error_message?: string;
             created_at: string;
           }>).map(t => {
@@ -358,6 +360,7 @@ export const ScrapePage: React.FC = () => {
               status: t.status as ScrapeTask['status'],
               resultsCount: t.results_count || 0,
               emailsCount: t.emails_count || 0,
+              apifyRunId: t.apify_run_id,
               errorMessage: t.error_message,
               createdAt: t.created_at,
             };
