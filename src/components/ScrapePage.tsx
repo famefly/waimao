@@ -1105,7 +1105,7 @@ export const ScrapePage: React.FC = () => {
                               重试
                             </button>
                           )}
-                          {task.status === 'completed' && task.resultsCount === 0 && task.apifyRunId && (
+                          {task.status === 'completed' && task.apifyRunId && (
                             <button
                               onClick={() => syncTask(task)}
                               className="text-sm text-green-600 hover:text-green-700"
