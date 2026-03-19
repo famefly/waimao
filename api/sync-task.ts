@@ -426,13 +426,17 @@ function parseScrapedData(
   
         const platformDefaults: Record<string, string> = {
           'linkedin': 'trading_company',
-          'instagram': 'brand_agent',
+          'leads_finder': 'trading_company',
           'facebook': 'retailer',
           'yelp': 'service_provider',
           'yellow_pages': 'service_provider',
           'yellow_pages_world': 'service_provider',
           'google_maps': 'retailer',
-          'forum': 'end_customer',
+          'alibaba': 'supplier',
+          'made_in_china': 'supplier',
+          'amazon_seller': 'importer',
+          'thomasnet': 'manufacturer',
+          'crunchbase': 'startup',
         };
   
         return platformDefaults[platform] || 'service_provider';
@@ -502,16 +506,20 @@ function parseScrapedData(
         };
         break;
 
-      case 'instagram':
+      // ===== Leads Finder（高价值渠道，直接返回邮箱）=====
+      case 'leads_finder':
         customer = {
           ...customer,
-          company_name: item.fullName || item.username || '未知公司',
-          contact_email: extractEmail(item),
-          contact_phone: extractPhone(item),
-          contact_name: item.fullName || item.username || '',
-          industry: item.biography?.split('\n')[0] || taskIndustry.split(' ')[0],
-          main_products: item.biography || '',
-          source_url: item.url || `https://instagram.com/${item.username}`,
+          company_name: item.company_name || '未知公司',
+          country: countryToArray(item.country) || [],
+          industry: item.industry || taskIndustry.split(' ')[0],
+          main_products: item.company_description || '',
+          contact_email: item.email || '',
+          contact_phone: item.company_phone || '',
+          contact_name: `${item.first_name || ''} ${item.last_name || ''}`.trim() || item.full_name || '',
+          annual_revenue: item.company_annual_revenue || '',
+          annual_purchase: item.company_size || '',
+          source_url: item.company_website || item.linkedin || '',
           channel_type: detectChannelType(item, platform),
         };
         break;

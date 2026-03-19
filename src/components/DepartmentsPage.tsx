@@ -6,33 +6,27 @@ import toast from 'react-hot-toast';
 
 // 可用渠道列表 - id 必须与 APIFY_ACTORS 中的 id 一致
 const CHANNELS = [
+  // 高价值渠道（直接返回邮箱）
   { id: 'code_crafter/leads-finder', name: 'Leads Finder', cat: 'high_value' },
   { id: 'memo23/thomasnet-scraper', name: 'ThomasNet', cat: 'high_value' },
   { id: 'curious_coder/crunchbase-scraper', name: 'Crunchbase', cat: 'high_value' },
+  { id: 'apimaestro/linkedin-profile-search-scraper', name: 'LinkedIn', cat: 'high_value' },
+  // 基础渠道（自动搭配邮箱提取）
   { id: 'compass/crawler-google-places', name: 'Google Maps', cat: 'basic' },
   { id: 'trudax/yellow-pages-us-scraper', name: 'Yellow Pages', cat: 'basic' },
   { id: 'canadesk/yellow-pages-scraper', name: 'Yellow Pages (全球)', cat: 'basic' },
   { id: 'tri_angle/yelp-scraper', name: 'Yelp', cat: 'basic' },
-  { id: 'apimaestro/linkedin-profile-search-scraper', name: 'LinkedIn', cat: 'social' },
-  { id: 'apify/facebook-pages-scraper', name: 'Facebook', cat: 'social' },
-  { id: 'apify/instagram-search-scraper', name: 'Instagram', cat: 'social' },
+  { id: 'apify/facebook-pages-scraper', name: 'Facebook', cat: 'basic' },
+  // B2B 平台（自动搭配邮箱提取）
   { id: 'adrian_horning/alibaba-scraper', name: 'Alibaba', cat: 'b2b' },
   { id: 'memo23/made-in-china-scraper', name: 'Made-in-China', cat: 'b2b' },
   { id: 'junglee/amazon-seller-scraper', name: 'Amazon卖家', cat: 'b2b' },
-  { id: 'custom/customs-data-scraper', name: '海关数据', cat: 'customs' },
-  { id: 'maiboxuan/scrapling-actor', name: 'Scrapling', cat: 'custom' },
-  { id: 'peghin/ai-forum-scraper-stack-overflow-quora-reddit-more', name: '论坛', cat: 'forum' },
-  { id: 'trudax/reddit-scraper', name: 'Reddit', cat: 'forum' },
 ];
 
 const CATS = [
-  { id: 'high_value', name: '高价值渠道', desc: '带邮箱验证' },
-  { id: 'basic', name: '基础渠道', desc: '新手推荐' },
-  { id: 'social', name: '社交媒体', desc: '品牌曝光' },
+  { id: 'high_value', name: '高价值渠道', desc: '直接返回邮箱' },
+  { id: 'basic', name: '基础渠道', desc: '自动提取邮箱' },
   { id: 'b2b', name: 'B2B平台', desc: '供应商信息' },
-  { id: 'customs', name: '海关数据', desc: '真实贸易' },
-  { id: 'custom', name: '自定义爬虫', desc: '任意网站' },
-  { id: 'forum', name: '论坛社区', desc: '行业讨论' },
 ];
 
 export const DepartmentsPage: React.FC = () => {

@@ -30,11 +30,11 @@ interface ApiKeyConfig {
 // Apify Actor 配置 - 与 ScrapePage.tsx 保持一致
 // 优先选择带邮箱的高价值渠道
 const APIFY_ACTORS = [
-  // ===== 高价值渠道（带邮箱）=====
+  // ===== 高价值渠道（直接返回邮箱）=====
   {
     id: 'code_crafter/leads-finder',
     name: 'Leads Finder (强烈推荐)',
-    description: '类似Apollo，直接返回验证邮箱！$1.5/千条，可按职位、行业、公司规模筛选',
+    description: '类似Apollo，直接返回验证邮箱！可按职位、行业、公司规模筛选',
     platform: 'leads_finder',
     supportsEmail: true,
     pricing: '$1.5/千条',
@@ -42,7 +42,7 @@ const APIFY_ACTORS = [
   {
     id: 'memo23/thomasnet-scraper',
     name: 'ThomasNet (美国工业)',
-    description: '美国最大工业供应商目录，包含公司、电话、网站、员工数',
+    description: '美国最大工业供应商目录，包含公司、电话、网站、员工数、邮箱',
     platform: 'thomasnet',
     supportsEmail: true,
     pricing: '$5/千条',
@@ -55,98 +55,80 @@ const APIFY_ACTORS = [
     supportsEmail: true,
     pricing: '$2.5/千条',
   },
-  
-  // ===== Amazon卖家 =====
   {
-    id: 'junglee/amazon-seller-scraper',
-    name: 'Amazon卖家 (进口商)',
-    description: '抓取亚马逊卖家信息，这些卖家很多是进口商',
-    platform: 'amazon_seller',
-    supportsEmail: false,
-    pricing: '按使用量计费',
+    id: 'apimaestro/linkedin-profile-search-scraper',
+    name: 'LinkedIn',
+    description: '无需登录，支持职位搜索+邮箱发现',
+    platform: 'linkedin',
+    supportsEmail: true,
+    pricing: '$5/千条',
   },
   
-  // ===== Google Maps =====
+  // ===== 基础渠道（自动搭配邮箱提取）=====
   {
     id: 'compass/crawler-google-places',
     name: 'Google Maps',
-    description: '获取商家名称、地址、电话、网站URL，邮箱需后续提取',
+    description: '获取商家信息，自动提取邮箱和电话',
     platform: 'google_maps',
-    supportsEmail: false,
+    supportsEmail: true,
     pricing: '$2/千条',
   },
-  
-  // ===== 商业目录 =====
   {
     id: 'trudax/yellow-pages-us-scraper',
-    name: 'Yellow Pages',
-    description: 'Yellow Pages US 黄页抓取，获取商家信息和网站URL',
+    name: 'Yellow Pages (美国)',
+    description: '美国黄页，自动提取邮箱',
     platform: 'yellow_pages',
-    supportsEmail: false,
+    supportsEmail: true,
+    pricing: '按使用量计费',
+  },
+  {
+    id: 'canadesk/yellow-pages-scraper',
+    name: 'Yellow Pages (全球)',
+    description: '全球黄页，自动提取邮箱',
+    platform: 'yellow_pages_world',
+    supportsEmail: true,
     pricing: '按使用量计费',
   },
   {
     id: 'tri_angle/yelp-scraper',
     name: 'Yelp Business',
-    description: 'Yelp 商家抓取，包含电话',
+    description: 'Yelp 商家，自动提取邮箱',
     platform: 'yelp',
-    supportsEmail: false,
-    pricing: '按使用量计费',
-  },
-  
-  // ===== 社交媒体 =====
-  {
-    id: 'apimaestro/linkedin-profile-search-scraper',
-    name: 'LinkedIn',
-    description: 'LinkedIn 职位搜索+邮箱发现，无需登录，$5/千条',
-    platform: 'linkedin',
     supportsEmail: true,
-    pricing: '$5/千条',
+    pricing: '按使用量计费',
   },
   {
     id: 'apify/facebook-pages-scraper',
     name: 'Facebook Pages',
-    description: 'Facebook 商家抓取，获取网站URL',
+    description: 'Facebook 商家，自动提取邮箱',
     platform: 'facebook',
-    supportsEmail: false,
-    pricing: '按使用量计费',
-  },
-  {
-    id: 'apify/instagram-search-scraper',
-    name: 'Instagram Search',
-    description: 'Instagram 搜索，无邮箱',
-    platform: 'instagram',
-    supportsEmail: false,
-    pricing: '按使用量计费',
-  },
-  
-  // ===== 论坛/社区 =====
-  {
-    id: 'peghin/ai-forum-scraper-stack-overflow-quora-reddit-more',
-    name: '论坛抓取',
-    description: '抓取论坛讨论，无邮箱',
-    platform: 'forum',
-    supportsEmail: false,
-    pricing: '按使用量计费',
-  },
-  
-  // ===== 海关数据 =====
-  {
-    id: 'custom/customs-data-scraper',
-    name: '海关数据 (进阶)',
-    description: '进出口贸易数据，获取真实采购商信息，需要配置第三方API',
-    platform: 'customs_data',
     supportsEmail: true,
-    pricing: '需配置API',
+    pricing: '按使用量计费',
   },
   
-  // ===== Scrapling 自适应爬虫 =====
+  // ===== B2B 平台（自动搭配邮箱提取）=====
   {
-    id: 'maiboxuan/scrapling-actor',
-    name: 'Scrapling (自适应爬虫)',
-    description: '自适应爬虫，自动绕过反爬检测，支持任意网站',
-    platform: 'scrapling',
-    supportsEmail: false,
+    id: 'adrian_horning/alibaba-scraper',
+    name: 'Alibaba 供应商',
+    description: '阿里巴巴供应商，自动提取邮箱',
+    platform: 'alibaba',
+    supportsEmail: true,
+    pricing: '按使用量计费',
+  },
+  {
+    id: 'memo23/made-in-china-scraper',
+    name: 'Made-in-China',
+    description: '中国制造网供应商，自动提取邮箱',
+    platform: 'made_in_china',
+    supportsEmail: true,
+    pricing: '按使用量计费',
+  },
+  {
+    id: 'junglee/amazon-seller-scraper',
+    name: 'Amazon卖家 (进口商)',
+    description: '亚马逊卖家，自动提取邮箱',
+    platform: 'amazon_seller',
+    supportsEmail: true,
     pricing: '按使用量计费',
   },
 ];

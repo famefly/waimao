@@ -5,54 +5,45 @@ import { getSupabase } from '../lib/supabase';
 
 // Apify Actor IDs（与前端 ScrapePage.tsx 保持一致）
 // 优先选择带邮箱的高价值渠道
+// needEmailExtract: 需要自动搭配邮箱提取
 export const APIFY_ACTORS = {
-  // ===== 高价值渠道（带邮箱）=====
+  // ===== 高价值渠道（直接返回邮箱）=====
   // Leads Finder: 类似Apollo，直接返回验证邮箱，$1.5/千条
   LEADS_FINDER: 'code_crafter/leads-finder',
   // ThomasNet: 美国工业供应商目录，$5/千条
   THOMASNET: 'memo23/thomasnet-scraper',
   // Crunchbase: 创业公司/科技公司，$2.5/千条
   CRUNCHBASE: 'curious_coder/crunchbase-scraper',
+  // LinkedIn: 无需登录，支持职位搜索+邮箱发现，$5/千条
+  LINKEDIN: 'apimaestro/linkedin-profile-search-scraper',
   
-  // ===== Google Maps（基础渠道）=====
+  // ===== 邮箱提取专用（用于自动搭配）=====
+  CONTACT_SCRAPER: 'vdrmota/contact-info-scraper',
+  
+  // ===== 基础渠道（需自动搭配邮箱提取）=====
   GOOGLE_MAPS: 'compass/crawler-google-places',
-  
-  // ===== 邮箱提取专用（需要网站URL）=====
-  EMAIL_EXTRACTOR: 'logical_scrapers/extract-email-from-any-website',
-  
-  // ===== Amazon卖家（跨境电商进口商）=====
-  AMAZON_SELLER: 'junglee/amazon-seller-scraper',
-  
-  // ===== 商业目录 =====
   YELLOW_PAGES: 'trudax/yellow-pages-us-scraper',
-  YELLOW_PAGES_WORLD: 'canadesk/yellow-pages-scraper', // 全球黄页
+  YELLOW_PAGES_WORLD: 'canadesk/yellow-pages-scraper',
   YELP: 'tri_angle/yelp-scraper',
-  
-  // ===== 社交媒体 =====
-  LINKEDIN: 'apimaestro/linkedin-profile-search-scraper', // 无需登录，支持关键词搜索+邮箱发现
   FACEBOOK: 'apify/facebook-pages-scraper',
-  INSTAGRAM: 'apify/instagram-search-scraper',
   
-  // ===== 论坛/社区 =====
-  FORUM: 'peghin/ai-forum-scraper-stack-overflow-quora-reddit-more',
-  REDDIT: 'trudax/reddit-scraper',
-  
-  // ===== B2B 平台 =====
+  // ===== B2B 平台（需自动搭配邮箱提取）=====
   ALIBABA: 'adrian_horning/alibaba-scraper',
   MADE_IN_CHINA: 'memo23/made-in-china-scraper',
-  GLOBAL_SOURCES: 'web.harvester/global-sources-scraper',
-  
-  // ===== 海关数据（需要配置API）=====
-  // 注意：海关数据通常需要单独订阅第三方API
-  // 这里使用公开的海关数据查询网站爬虫
-  CUSTOMS_DATA: 'custom/customs-data-scraper', // 需要自定义部署
-  
-  // ===== 专业行业网站 =====
-  INDUSTRY_DIRECTORY: 'custom/industry-directory-scraper', // 行业目录爬虫
-  
-  // ===== 自定义爬虫 =====
-  SCRAPLING: 'maiboxuan/scrapling-actor', // Scrapling 自适应爬虫
+  AMAZON_SELLER: 'junglee/amazon-seller-scraper',
 };
+
+// 需要自动搭配邮箱提取的平台
+export const NEED_EMAIL_EXTRACT_PLATFORMS = [
+  'google_maps',
+  'yellow_pages',
+  'yellow_pages_world',
+  'yelp',
+  'facebook',
+  'alibaba',
+  'made_in_china',
+  'amazon_seller',
+];
 
 // 从数据库获取 API Key
 export const getApifyToken = async (): Promise<string | null> => {
@@ -585,21 +576,6 @@ export const buildActorInput = (
         },
       };
 
-    // ===== Instagram（支持关键词搜索用户）=====
-    case 'instagram':
-      return {
-        actorId: APIFY_ACTORS.INSTAGRAM,
-        input: {
-          // 搜索查询
-          searchQueries: keywords,
-          // 搜索类型：用户
-          searchType: 'user',
-          // 结果数量
-          resultsLimit: maxResults,
-        },
-      };
-
-    // ===== 黄页（Apify 官方版）=====
     // ===== 黄页（Apify 官方版 - 美国）=====
     case 'yellow_pages':
       return {
@@ -628,26 +604,6 @@ export const buildActorInput = (
         },
       };
 
-    case 'forum':
-      return {
-        actorId: APIFY_ACTORS.FORUM,
-        input: {
-          keywords,
-          maxThreads: maxResults,
-        },
-      };
-
-    // ===== Reddit 社区 =====
-    case 'reddit':
-      return {
-        actorId: APIFY_ACTORS.REDDIT,
-        input: {
-          searchQueries: keywords,
-          maxPosts: maxResults,
-          maxComments: 10,
-        },
-      };
-
     // ===== B2B 平台 =====
     case 'alibaba':
       return {
@@ -663,19 +619,6 @@ export const buildActorInput = (
         actorId: APIFY_ACTORS.MADE_IN_CHINA,
         input: {
           keywords: keywords.join(' '),
-          maxItems: maxResults,
-        },
-      };
-
-    // ===== 海关数据 =====
-    case 'customs_data':
-      // 注意：海关数据需要配置第三方API
-      // 这里使用自定义爬虫访问公开海关数据网站
-      return {
-        actorId: APIFY_ACTORS.CUSTOMS_DATA,
-        input: {
-          keywords,
-          country,
           maxItems: maxResults,
         },
       };
@@ -747,26 +690,7 @@ export const buildActorInput = (
         },
       };
 
-    // ===== Scrapling 自适应爬虫 =====
-    case 'scrapling':
-      // Scrapling 需要 URL 列表，不支持关键词搜索
-      // 使用场景：用户输入网站 URL 进行爬取
-      // 将关键词作为 URL 使用（需要是有效 URL）
-      const urls = keywords.filter(k => k.startsWith('http') || k.startsWith('www'));
-      return {
-        actorId: APIFY_ACTORS.SCRAPLING,
-        input: {
-          mode: 'single',
-          urls: urls.length > 0 ? urls : keywords.map(k => `https://www.google.com/search?q=${encodeURIComponent(k)}`),
-          selectors: {
-            title: 'h1',
-            description: 'p',
-            email: 'a[href^="mailto:"]',
-            phone: 'a[href^="tel:"]',
-          },
-        },
-      };
-
+    // ===== 默认：Google Maps =====
     default:
       // 默认使用 Google Maps（官方版：评分4.7）
       return {
