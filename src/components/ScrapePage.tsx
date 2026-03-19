@@ -627,6 +627,35 @@ export const ScrapePage: React.FC = () => {
     toast('已加载任务配置，请点击"开始抓取"重试');
   };
 
+  // 手动同步任务数据
+  const syncTask = async (task: ScrapeTask) => {
+    if (!task.apifyRunId) {
+      toast.error('任务没有 Apify Run ID');
+      return;
+    }
+
+    const syncToast = toast.loading('正在同步数据...');
+
+    try {
+      const response = await fetch('/api/sync-task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId: task.id }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success(`同步成功！导入 ${result.customersCount || 0} 条数据`, { id: syncToast });
+        loadTasks();
+      } else {
+        toast.error(`同步失败: ${result.error || '未知错误'}`, { id: syncToast });
+      }
+    } catch (error) {
+      toast.error('同步请求失败', { id: syncToast });
+    }
+  };
+
   // 删除单个任务
   const deleteTask = async (taskId: string) => {
     if (!confirm('确定要删除这个任务吗？')) return;
@@ -1074,6 +1103,14 @@ export const ScrapePage: React.FC = () => {
                               className="text-sm text-blue-600 hover:text-blue-700"
                             >
                               重试
+                            </button>
+                          )}
+                          {task.status === 'completed' && task.resultsCount === 0 && task.apifyRunId && (
+                            <button
+                              onClick={() => syncTask(task)}
+                              className="text-sm text-green-600 hover:text-green-700"
+                            >
+                              同步
                             </button>
                           )}
                           {task.status !== 'running' && (
