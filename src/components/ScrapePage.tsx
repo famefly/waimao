@@ -329,7 +329,7 @@ export const ScrapePage: React.FC = () => {
   const [newKeyword, setNewKeyword] = useState('');
   const [selectedCountries, setSelectedCountries] = useState<string[]>(['US', 'GB', 'DE']);
   const [selectedIndustry, setSelectedIndustry] = useState('建筑 Construction');
-  const [maxResults, setMaxResults] = useState(50);
+  const [maxResults, setMaxResults] = useState(100);
   const [isRunning, setIsRunning] = useState(false);
   const [tasks, setTasks] = useState<ScrapeTask[]>([]);
   const [progress, setProgress] = useState({ current: 0, total: 0, status: '', platform: '' });
@@ -534,6 +534,12 @@ export const ScrapePage: React.FC = () => {
 
     setIsRunning(true);
     
+    // 计算预估搜索维度：平台 × 国家 × 关键词
+    const totalDimensions = selectedActors.length * selectedCountries.length * keywords.length;
+    
+    // 计算每个维度的结果数（向上取整，最少 10 条）
+    const resultsPerDimension = Math.max(10, Math.ceil(maxResults / totalDimensions));
+    
     // 计算总任务数：每个平台 x 每个国家
     const totalTasks = selectedActors.length * selectedCountries.length;
     setProgress({ current: 0, total: totalTasks, status: '准备中...', platform: '' });
@@ -591,12 +597,12 @@ export const ScrapePage: React.FC = () => {
 
         try {
           // 使用 apifyservices 中的 buildActorInput 函数构建输入参数
-          // 注意：这里只传入单个国家
+          // 注意：这里只传入单个国家，maxResults 已按维度均分
           const { input } = buildActorInput(actor.platform, {
             keywords,
             countries: [countryName], // 单个国家
             industry: selectedIndustry,
-            maxResults,
+            maxResults: resultsPerDimension,
           });
 
           // 调用 run-apify API 来启动抓取任务
@@ -937,15 +943,15 @@ export const ScrapePage: React.FC = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              每个平台最大结果数
+              所有维度搜索总数
             </label>
             <input
               type="number"
               value={maxResults}
-              onChange={e => setMaxResults(parseInt(e.target.value) || 50)}
+              onChange={e => setMaxResults(parseInt(e.target.value) || 100)}
               disabled={isRunning}
               min={10}
-              max={500}
+              max={5000}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -969,16 +975,15 @@ export const ScrapePage: React.FC = () => {
               </div>
               <div className="h-4 w-px bg-gray-300"></div>
               <div className="flex items-center">
-                <span className="text-gray-600 mr-2">预估搜索数量:</span>
+                <span className="text-gray-600 mr-2">预估搜索维度:</span>
                 <span className="font-bold text-purple-600 text-lg">
                   {(selectedActors.length * selectedCountries.length * keywords.length).toLocaleString()}
                 </span>
-                <span className="text-gray-500 text-xs ml-1">（平台×国家×关键词）</span>
               </div>
             </div>
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            实际结果数量可能因平台限制和数据可用性而有所不同
+            每个维度结果数 = 搜索总数 ÷ 预估维度数（最少10条），实际结果可能因平台限制有所不同
           </p>
         </div>
 
