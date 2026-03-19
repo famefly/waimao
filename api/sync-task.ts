@@ -441,6 +441,13 @@ function parseScrapedData(
   
         return platformDefaults[platform] || 'service_provider';
       };
+
+  // 调试日志：打印第一条数据的结构
+  if (rawData.length > 0) {
+    console.log(`[Sync Task] Platform: ${platform}, First item keys:`, Object.keys(rawData[0]));
+    console.log(`[Sync Task] First item sample:`, JSON.stringify(rawData[0], null, 2).substring(0, 1000));
+  }
+
   rawData.forEach((item: any) => {
     let customer: any = {
       source_platform: platform,
@@ -498,6 +505,15 @@ function parseScrapedData(
           || `${item.firstname || item.firstName || ''} ${item.lastname || item.lastName || ''}`.trim();
         const linkedinEmail = item.email || item.email_address || item.contact_email 
           || item.work_email || extractEmail(item);
+        
+        // 调试日志
+        console.log(`[LinkedIn Parse] Item:`, {
+          original: { company_name: item.company_name, companyName: item.companyName, company: item.company },
+          linkedinCompany,
+          linkedinName,
+          linkedinEmail,
+          hasContactInfo: !!(linkedinEmail || item.phone || linkedinName)
+        });
         
         customer = {
           ...customer,
@@ -670,10 +686,24 @@ function parseScrapedData(
     const isProfilePlatform = platform === 'linkedin' || platform === 'leads_finder';
     const hasContactInfo = customer.contact_email || customer.contact_phone || customer.contact_name;
     
+    // 调试日志：打印过滤信息
+    if (isProfilePlatform) {
+      console.log(`[Filter] ${platform} item:`, {
+        hasContactInfo,
+        contact_email: customer.contact_email,
+        contact_phone: customer.contact_phone,
+        contact_name: customer.contact_name,
+        company_name: customer.company_name,
+        willSave: hasContactInfo || customer.company_name !== '未知公司'
+      });
+    }
+    
     if (isProfilePlatform) {
       // 个人档案平台：有联系人信息就保存
       if (hasContactInfo || customer.company_name !== '未知公司') {
         customers.push(customer);
+      } else {
+        console.log(`[Filter] Skipping ${platform} item - no contact info and unknown company`);
       }
     } else {
       // 其他平台：需要有公司名
