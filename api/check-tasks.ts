@@ -501,6 +501,42 @@ function parseScrapedData(
         };
         break;
 
+      // ===== ThomasNet（美国工业供应商）=====
+      case 'thomasnet':
+        customer = {
+          ...customer,
+          company_name: item.name || item.companyName || '未知公司',
+          contact_email: item.contactEmail || item.email || extractEmail(item),
+          contact_phone: item.primaryPhone || item.phone || extractPhone(item),
+          contact_name: item.personnel?.[0]?.name || item.contact_name || '',
+          country: ['United States'],
+          industry: item.heading?.name || item.category || taskIndustry.split(' ')[0],
+          main_products: item.headings?.map((h: any) => h.name).join(', ') || item.description || '',
+          source_url: item.website || '',
+          annual_revenue: item.annualSales || '',
+          annual_purchase: item.numberEmployees || '',
+          channel_type: detectChannelType(item, platform),
+        };
+        break;
+
+      // ===== Crunchbase（科技公司）=====
+      case 'crunchbase':
+        customer = {
+          ...customer,
+          company_name: item.name || item.identifier?.value || '未知公司',
+          contact_email: item.contactEmail || extractEmail(item),
+          contact_phone: item.phoneNumber || extractPhone(item),
+          contact_name: item.founders?.[0]?.name || '',
+          country: countryToArray(item.locationIdentifiers?.[0]?.value) || extractCountryFromAddress(item.city),
+          industry: item.categories?.[0]?.value || item.industry || taskIndustry.split(' ')[0],
+          main_products: item.shortDescription || item.description || '',
+          source_url: item.website || item.website?.value || '',
+          annual_revenue: item.revenueRange || '',
+          annual_purchase: item.numEmployeesEnum || '',
+          channel_type: detectChannelType(item, platform),
+        };
+        break;
+
       case 'facebook':
         customer = {
           ...customer,
