@@ -497,36 +497,44 @@ function parseScrapedData(
       // ===== 社交媒体 =====
       case 'linkedin':
         // apimaestro/linkedin-profile-search-scraper 输出格式
-        // 字段名可能是多种形式，需要兼容
-        const linkedinCompany = item.company_name || item.companyName || item.company 
-          || item.current_company || item.currentCompany || item.organization 
-          || item.organization_name || '未知公司';
-        const linkedinName = item.full_name || item.name || item.fullName 
-          || `${item.firstname || item.firstName || ''} ${item.lastname || item.lastName || ''}`.trim();
-        const linkedinEmail = item.email || item.email_address || item.contact_email 
-          || item.work_email || extractEmail(item);
+        // 数据结构是嵌套的：{ search_criteria, basic_info, experience }
+        const basicInfo = item.basic_info || {};
+        const searchCriteria = item.search_criteria || {};
         
-        // 调试日志
-        console.log(`[LinkedIn Parse] Item:`, {
-          original: { company_name: item.company_name, companyName: item.companyName, company: item.company },
-          linkedinCompany,
-          linkedinName,
-          linkedinEmail,
-          hasContactInfo: !!(linkedinEmail || item.phone || linkedinName)
-        });
+        // 从 basic_info 提取数据
+        const linkedinCompany = basicInfo.current_company || basicInfo.company_name 
+          || item.company_name || item.companyName || item.company 
+          || '未知公司';
+        const linkedinName = basicInfo.fullname || basicInfo.full_name || basicInfo.name 
+          || `${basicInfo.first_name || ''} ${basicInfo.last_name || ''}`.trim()
+          || item.full_name || item.name || '';
+        const linkedinEmail = basicInfo.email || item.email || item.email_address || '';
+        const linkedinLocation = basicInfo.location || {};
+        const linkedinCountry = linkedinLocation.country || linkedinLocation.full || searchCriteria.location || '';
+        const linkedinCity = linkedinLocation.city || '';
+        const linkedinHeadline = basicInfo.headline || basicInfo.title || searchCriteria.current_job_title || '';
+        const linkedinProfileUrl = basicInfo.profile_url || basicInfo.profileUrl || item.profile_url || '';
+        
+        // 从 experience 提取公司信息（如果 basic_info.current_company 为空）
+        const experience = item.experience || [];
+        const firstExperience = experience[0] || {};
+        const experienceCompany = firstExperience.company || firstExperience.company_name || '';
+        
+        // 最终公司名
+        const finalCompany = linkedinCompany || experienceCompany || '未知公司';
         
         customer = {
           ...customer,
-          company_name: linkedinCompany,
-          country: countryToArray(item.location || item.country || item.city) || extractCountryFromAddress(item.location),
-          industry: item.industry || item.industry_name || taskIndustry.split(' ')[0],
-          main_products: item.headline || item.title || item.job_title || '',
+          company_name: finalCompany,
+          country: countryToArray(linkedinCountry) || extractCountryFromAddress(linkedinCity),
+          industry: basicInfo.industry || taskIndustry.split(' ')[0],
+          main_products: linkedinHeadline,
           contact_email: linkedinEmail,
-          contact_phone: item.phone || item.contact_phone || extractPhone(item),
+          contact_phone: basicInfo.phone || '',
           contact_name: linkedinName,
           annual_revenue: '',
           annual_purchase: '',
-          source_url: item.linkedin_url || item.profile_url || item.profileUrl || item.url || '',
+          source_url: linkedinProfileUrl,
           channel_type: detectChannelType(item, platform),
         };
         break;
@@ -686,21 +694,9 @@ function parseScrapedData(
     const isProfilePlatform = platform === 'linkedin' || platform === 'leads_finder';
     const hasContactInfo = customer.contact_email || customer.contact_phone || customer.contact_name;
     
-    // 调试日志：打印过滤信息
     if (isProfilePlatform) {
-      console.log(`[Filter] ${platform} item:`, {
-        hasContactInfo,
-        contact_email: customer.contact_email,
-        contact_phone: customer.contact_phone,
-        contact_name: customer.contact_name,
-        company_name: customer.company_name,
-        willSave: hasContactInfo || customer.company_name !== '未知公司'
-      });
-    }
-    
-    if (isProfilePlatform) {
-      // 个人档案平台：有联系人信息就保存
-      if (hasContactInfo || customer.company_name !== '未知公司') {
+      // 个人档案平台：有联系人信息或公司名就保存（LinkedIn 个人资料有价值）
+      if (hasContactInfo || (customer.company_name && customer.company_name !== '未知公司')) {
         customers.push(customer);
       } else {
         console.log(`[Filter] Skipping ${platform} item - no contact info and unknown company`);
