@@ -6,10 +6,19 @@ import { getSupabase } from '../lib/supabase';
 // Apify Actor IDs（与前端 ScrapePage.tsx 保持一致）
 // 优先选择带邮箱的高价值渠道
 // needEmailExtract: 需要自动搭配邮箱提取
+// 最后更新: 2026-04-07
 export const APIFY_ACTORS = {
-  // ===== 高价值渠道（直接返回邮箱）=====
-  // Leads Finder: 类似Apollo，直接返回验证邮箱，$1.5/千条
+  // ===== 超高价值渠道（直接返回邮箱+电话）=====
+  // Pipeline Leads: $1/千条，50k/次运行，90M+验证数据库，类似Apollo/ZoomInfo/Lusha
+  PIPELINE_LEADS: 'pipelinelabs/lead-scraper-apollo-zoominfo-lusha',
+  // Leads Finder: $1.5/千条，直接返回验证邮箱+电话
   LEADS_FINDER: 'code_crafter/leads-finder',
+  // Lead Finder Pro: $1.39/千条，验证邮箱+电话
+  LEAD_FINDER_PRO: 'fatihtahta/lead-finder-with-emails-scraper',
+  // Multi-Source Leads: 多数据源，带邮箱电话
+  MULTI_SOURCE_LEADS: 'fatihai-tools/leads-finder',
+  
+  // ===== 高价值渠道（直接返回邮箱）=====
   // ThomasNet: 美国工业供应商目录，$5/千条
   THOMASNET: 'memo23/thomasnet-scraper',
   // Crunchbase: 创业公司/科技公司，$2.5/千条
@@ -19,6 +28,7 @@ export const APIFY_ACTORS = {
   
   // ===== 邮箱提取专用（用于自动搭配）=====
   CONTACT_SCRAPER: 'vdrmota/contact-info-scraper',
+  EMAIL_EXTRACTOR: 'logical_scrapers~extract-email-from-any-website',
   
   // ===== 基础渠道（需自动搭配邮箱提取）=====
   GOOGLE_MAPS: 'compass/crawler-google-places',
@@ -31,6 +41,130 @@ export const APIFY_ACTORS = {
   ALIBABA: 'adrian_horning/alibaba-scraper',
   MADE_IN_CHINA: 'memo23/made-in-china-scraper',
   AMAZON_SELLER: 'junglee/amazon-seller-scraper',
+};
+
+// 渠道信息配置（用于前端展示和健康检查）
+export const CHANNEL_CONFIG = {
+  // 超高价值渠道 - 直接返回邮箱+电话
+  pipeline_leads: {
+    name: 'Pipeline Leads',
+    nameZh: 'Pipeline 线索库',
+    actorId: APIFY_ACTORS.PIPELINE_LEADS,
+    hasEmail: true,
+    hasPhone: true,
+    pricePerK: 1.0,
+    maxPerRun: 50000,
+    description: '90M+验证数据库，类似Apollo/ZoomInfo，$1/千条',
+    priority: 1,
+    status: 'active' as const,
+    lastChecked: '2026-04-07',
+  },
+  leads_finder: {
+    name: 'Leads Finder',
+    nameZh: 'Leads Finder',
+    actorId: APIFY_ACTORS.LEADS_FINDER,
+    hasEmail: true,
+    hasPhone: true,
+    pricePerK: 1.5,
+    maxPerRun: 10000,
+    description: '直接返回验证邮箱+电话，类似Apollo',
+    priority: 2,
+    status: 'active' as const,
+    lastChecked: '2026-04-07',
+  },
+  lead_finder_pro: {
+    name: 'Lead Finder Pro',
+    nameZh: '专业线索查找',
+    actorId: APIFY_ACTORS.LEAD_FINDER_PRO,
+    hasEmail: true,
+    hasPhone: true,
+    pricePerK: 1.39,
+    maxPerRun: 10000,
+    description: '$1.39/千条，验证邮箱+电话',
+    priority: 3,
+    status: 'active' as const,
+    lastChecked: '2026-04-07',
+  },
+  multi_source_leads: {
+    name: 'Multi-Source Leads',
+    nameZh: '多源线索',
+    actorId: APIFY_ACTORS.MULTI_SOURCE_LEADS,
+    hasEmail: true,
+    hasPhone: true,
+    pricePerK: 2.0,
+    maxPerRun: 5000,
+    description: '多数据源聚合，带邮箱电话',
+    priority: 4,
+    status: 'active' as const,
+    lastChecked: '2026-04-07',
+  },
+  // 高价值渠道
+  thomasnet: {
+    name: 'ThomasNet',
+    nameZh: '美国工业目录',
+    actorId: APIFY_ACTORS.THOMASNET,
+    hasEmail: true,
+    hasPhone: true,
+    pricePerK: 5.0,
+    maxPerRun: 1000,
+    description: '美国最大工业供应商目录',
+    priority: 5,
+    status: 'active' as const,
+    lastChecked: '2026-04-07',
+  },
+  crunchbase: {
+    name: 'Crunchbase',
+    nameZh: '创业公司库',
+    actorId: APIFY_ACTORS.CRUNCHBASE,
+    hasEmail: true,
+    hasPhone: false,
+    pricePerK: 2.5,
+    maxPerRun: 1000,
+    description: '全球创业公司/科技公司数据库',
+    priority: 6,
+    status: 'active' as const,
+    lastChecked: '2026-04-07',
+  },
+  linkedin: {
+    name: 'LinkedIn',
+    nameZh: '领英',
+    actorId: APIFY_ACTORS.LINKEDIN,
+    hasEmail: true,
+    hasPhone: false,
+    pricePerK: 5.0,
+    maxPerRun: 1000,
+    description: '支持职位搜索+邮箱发现',
+    priority: 7,
+    status: 'active' as const,
+    lastChecked: '2026-04-07',
+  },
+  // 基础渠道
+  google_maps: {
+    name: 'Google Maps',
+    nameZh: '谷歌地图',
+    actorId: APIFY_ACTORS.GOOGLE_MAPS,
+    hasEmail: false,
+    hasPhone: true,
+    pricePerK: 2.0,
+    maxPerRun: 5000,
+    description: '需自动提取邮箱，$2/千条',
+    priority: 10,
+    status: 'active' as const,
+    lastChecked: '2026-04-07',
+  },
+  yellow_pages: {
+    name: 'Yellow Pages (US)',
+    nameZh: '美国黄页',
+    actorId: APIFY_ACTORS.YELLOW_PAGES,
+    hasEmail: false,
+    hasPhone: true,
+    pricePerK: 3.0,
+    maxPerRun: 2000,
+    description: '需自动提取邮箱',
+    priority: 11,
+    status: 'active' as const,
+    lastChecked: '2026-04-07',
+  },
 };
 
 // 需要自动搭配邮箱提取的平台
@@ -261,6 +395,56 @@ export const parseScrapedData = (
     };
 
     switch (platform) {
+      // ===== Pipeline Leads（超高价值渠道，直接返回邮箱+电话）=====
+      case 'pipeline_leads':
+        customer = {
+          ...customer,
+          company_name: item.companyName || item.company || item.name || '未知公司',
+          country: countryToArray(item.country) || countryToArray(item.location),
+          industry: item.industry || taskIndustry.split(' ')[0],
+          main_products: item.products || item.services || '',
+          contact_name: item.contactName || item.fullName || item.name || '',
+          contact_email: item.email || item.businessEmail || item.workEmail || '',
+          contact_phone: item.phone || item.mobilePhone || item.phoneNumber || '',
+          annual_revenue: item.revenue || item.companyRevenue || '',
+          annual_purchase: item.employeeCount || item.companySize || '',
+          source_url: item.linkedinUrl || item.website || '',
+          channel_type: detectChannelType(item, platform),
+        };
+        break;
+
+      // ===== Lead Finder Pro =====
+      case 'lead_finder_pro':
+        customer = {
+          ...customer,
+          company_name: item.companyName || item.company || '未知公司',
+          country: countryToArray(item.country) || countryToArray(item.location),
+          industry: item.industry || taskIndustry.split(' ')[0],
+          main_products: item.products || '',
+          contact_name: item.contactName || item.fullName || '',
+          contact_email: item.email || item.verifiedEmail || '',
+          contact_phone: item.phone || item.mobile || '',
+          source_url: item.linkedinUrl || item.website || '',
+          channel_type: detectChannelType(item, platform),
+        };
+        break;
+
+      // ===== Multi-Source Leads =====
+      case 'multi_source_leads':
+        customer = {
+          ...customer,
+          company_name: item.companyName || item.company || item.name || '未知公司',
+          country: countryToArray(item.country) || countryToArray(item.location),
+          industry: item.industry || taskIndustry.split(' ')[0],
+          main_products: item.products || item.services || '',
+          contact_name: item.contactName || item.fullName || '',
+          contact_email: item.email || item.emails?.[0] || '',
+          contact_phone: item.phone || item.phones?.[0] || '',
+          source_url: item.website || item.url || '',
+          channel_type: detectChannelType(item, platform),
+        };
+        break;
+
       // ===== Google Maps（最优：$2/1000条，95%+邮箱率）=====
       case 'google_maps':
       case 'google_maps_leads':
@@ -631,6 +815,51 @@ export const buildActorInput = (
           search: keywords.join(' '),
           location: country,
           maxItems: maxResults,
+        },
+      };
+
+    // ===== Pipeline Leads（超高价值渠道，$1/千条，50k/次）=====
+    case 'pipeline_leads':
+      return {
+        actorId: APIFY_ACTORS.PIPELINE_LEADS,
+        input: {
+          // 搜索关键词
+          query: keywords.join(' '),
+          // 地点筛选
+          location: country || undefined,
+          // 结果数量
+          limit: Math.min(maxResults, 50000),
+          // 包含邮箱和电话
+          includeEmail: true,
+          includePhone: true,
+        },
+      };
+
+    // ===== Lead Finder Pro（$1.39/千条）=====
+    case 'lead_finder_pro':
+      return {
+        actorId: APIFY_ACTORS.LEAD_FINDER_PRO,
+        input: {
+          // 关键词搜索
+          keywords: keywords.join(' '),
+          // 地点
+          location: country || undefined,
+          // 结果数量
+          maxResults,
+        },
+      };
+
+    // ===== Multi-Source Leads（多数据源聚合）=====
+    case 'multi_source_leads':
+      return {
+        actorId: APIFY_ACTORS.MULTI_SOURCE_LEADS,
+        input: {
+          // 行业/关键词
+          industry: keywords.join(' '),
+          // 地点
+          location: country || undefined,
+          // 结果数量
+          limit: maxResults,
         },
       };
 
