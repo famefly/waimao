@@ -6,7 +6,7 @@ import { getSupabase } from '../lib/supabase';
 // Apify Actor IDs（与前端 ScrapePage.tsx 保持一致）
 // 优先选择带邮箱的高价值渠道
 // needEmailExtract: 需要自动搭配邮箱提取
-// 最后更新: 2026-04-07
+// 最后更新: 2026-04-15
 export const APIFY_ACTORS = {
   // ===== 超高价值渠道（直接返回邮箱+电话）=====
   // Pipeline Leads: $1/千条，50k/次运行，90M+验证数据库，类似Apollo/ZoomInfo/Lusha
@@ -23,7 +23,11 @@ export const APIFY_ACTORS = {
   THOMASNET: 'memo23/thomasnet-scraper',
   // Crunchbase: 创业公司/科技公司，$2.5/千条
   CRUNCHBASE: 'curious_coder/crunchbase-scraper',
-  // LinkedIn: 无需登录，支持职位搜索+邮箱发现，$5/千条
+  // LinkedIn公司搜索: 支持关键词搜索公司，$5/千条（新增 2026-04-15）
+  LINKEDIN_COMPANIES: 'apimaestro/linkedin-companies-search-scraper',
+  // LinkedIn人物搜索: 支持关键词搜索人物+邮箱提取，$5/月+用量（新增 2026-04-15）
+  LINKEDIN_EMAIL: 'scraper-mind/linkedin-email-scraper',
+  // LinkedIn职位搜索: 原有版本，支持职位搜索+邮箱发现
   LINKEDIN: 'apimaestro/linkedin-profile-search-scraper',
   
   // ===== 邮箱提取专用（用于自动搭配）=====
@@ -126,17 +130,43 @@ export const CHANNEL_CONFIG = {
     lastChecked: '2026-04-07',
   },
   linkedin: {
-    name: 'LinkedIn',
-    nameZh: '领英',
+    name: 'LinkedIn (职位搜索)',
+    nameZh: '领英职位搜索',
     actorId: APIFY_ACTORS.LINKEDIN,
     hasEmail: true,
     hasPhone: false,
     pricePerK: 5.0,
     maxPerRun: 1000,
     description: '支持职位搜索+邮箱发现',
+    priority: 8,
+    status: 'active' as const,
+    lastChecked: '2026-04-15',
+  },
+  linkedin_companies: {
+    name: 'LinkedIn Companies',
+    nameZh: '领英公司搜索',
+    actorId: APIFY_ACTORS.LINKEDIN_COMPANIES,
+    hasEmail: false,
+    hasPhone: false,
+    pricePerK: 5.0,
+    maxPerRun: 1000,
+    description: '支持产品/行业关键词搜索公司，需配合邮箱提取',
+    priority: 6,
+    status: 'active' as const,
+    lastChecked: '2026-04-15',
+  },
+  linkedin_email: {
+    name: 'LinkedIn Email Scraper',
+    nameZh: '领英邮箱提取',
+    actorId: APIFY_ACTORS.LINKEDIN_EMAIL,
+    hasEmail: true,
+    hasPhone: false,
+    pricePerK: 2.5,
+    maxPerRun: 5000,
+    description: '支持产品/行业关键词搜索人物+邮箱提取，$5/月+用量',
     priority: 7,
     status: 'active' as const,
-    lastChecked: '2026-04-07',
+    lastChecked: '2026-04-15',
   },
   // 基础渠道
   google_maps: {
@@ -497,6 +527,39 @@ export const parseScrapedData = (
         };
         break;
 
+      // ===== LinkedIn 公司搜索（2026-04-15 新增）=====
+      case 'linkedin_companies':
+        customer = {
+          ...customer,
+          company_name: item.name || item.companyName || '未知公司',
+          country: countryToArray(item.headquarters?.country) || countryToArray(item.location),
+          industry: item.industry || item.industries?.[0] || taskIndustry.split(' ')[0],
+          main_products: item.specialties?.join(', ') || item.description || '',
+          contact_email: '', // 公司搜索不直接返回邮箱
+          contact_phone: item.phone || '',
+          annual_revenue: item.revenue || '',
+          annual_purchase: item.employeeCount || item.companySize || '',
+          source_url: item.url || item.linkedinUrl || '',
+          channel_type: detectChannelType(item, platform),
+        };
+        break;
+
+      // ===== LinkedIn 邮箱提取（2026-04-15 新增）=====
+      case 'linkedin_email':
+        customer = {
+          ...customer,
+          company_name: item.companyName || item.company || '未知公司',
+          country: countryToArray(item.location) || countryToArray(item.country),
+          industry: taskIndustry.split(' ')[0],
+          main_products: item.description || item.title || '',
+          contact_name: item.name || item.fullName || '',
+          contact_email: item.email || item.emails?.[0] || '',
+          contact_phone: '',
+          source_url: item.url || item.linkedinUrl || '',
+          channel_type: detectChannelType(item, platform),
+        };
+        break;
+
       case 'instagram':
         customer = {
           ...customer,
@@ -743,6 +806,34 @@ export const buildActorInput = (
           emailDiscovery: true,
           // 结果数量
           maxItems: maxResults,
+        },
+      };
+
+    // ===== LinkedIn 公司搜索（支持产品/行业关键词，2026-04-15 新增）=====
+    case 'linkedin_companies':
+      return {
+        actorId: APIFY_ACTORS.LINKEDIN_COMPANIES,
+        input: {
+          // 关键词搜索（支持产品/行业关键词如 "aluminum profile", "铝型材"）
+          search_keyword: keywords.join(' '),
+          // 地点筛选（可选）
+          location: country || undefined,
+          // 结果数量（每页最多50条）
+          maxItems: Math.min(maxResults, 1000),
+        },
+      };
+
+    // ===== LinkedIn 邮箱提取（支持关键词搜索人物+邮箱，2026-04-15 新增）=====
+    case 'linkedin_email':
+      return {
+        actorId: APIFY_ACTORS.LINKEDIN_EMAIL,
+        input: {
+          // 关键词搜索（支持产品/行业关键词如 "aluminum profile buyer", "采购经理"）
+          keywords: keywords,
+          // 地点筛选
+          location: country || undefined,
+          // 结果数量
+          maxResults: Math.min(maxResults, 5000),
         },
       };
 
