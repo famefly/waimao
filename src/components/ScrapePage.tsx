@@ -180,17 +180,18 @@ const APIFY_ACTORS = [
   // ===== 基础渠道（需自动搭配邮箱提取）=====
   {
     id: 'compass/crawler-google-places',
-    name: 'Google Maps',
+    name: 'Google Maps (推荐)',
     platform: 'google_maps',
     icon: MapPin,
     color: 'bg-red-500',
     supportsEmail: true,
     supportsPhone: true,
-    emailRate: '自动提取',
-    description: '获取商家信息，自动提取邮箱和电话',
+    emailRate: '直接提取',
+    description: '直接获取商家邮箱+电话，覆盖全球商家',
     pricing: '$2/千条',
     category: 'basic',
-    needEmailExtract: true,
+    needEmailExtract: false,
+    badge: '全球商家',
   },
   {
     id: 'trudax/yellow-pages-us-scraper',

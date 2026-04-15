@@ -173,14 +173,14 @@ export const CHANNEL_CONFIG = {
     name: 'Google Maps',
     nameZh: '谷歌地图',
     actorId: APIFY_ACTORS.GOOGLE_MAPS,
-    hasEmail: false,
+    hasEmail: true, // 开启邮箱提取功能
     hasPhone: true,
     pricePerK: 2.0,
     maxPerRun: 5000,
-    description: '需自动提取邮箱，$2/千条',
+    description: '直接提取邮箱+电话，$2/千条',
     priority: 10,
     status: 'active' as const,
-    lastChecked: '2026-04-07',
+    lastChecked: '2026-04-15',
   },
   yellow_pages: {
     name: 'Yellow Pages (US)',
@@ -742,8 +742,7 @@ export const buildActorInput = (
     case 'google_maps':
     case 'google_maps_leads':
       // compass/crawler-google-places 官方版本
-      // 免费版：获取商家名称、地址、电话、网站URL
-      // 邮箱提取：需要从网站URL进一步提取（companyContactsEnrichment 是付费功能）
+      // 邮箱提取：companyContactsEnrichment 开启后可直接获取邮箱
       
       // 计算每个关键词的结果数（总数/关键词数）
       const placesPerKeyword = Math.ceil(maxResults / Math.max(keywords.length, 1));
@@ -760,9 +759,8 @@ export const buildActorInput = (
           // 语言设置
           language,
           // ===== 邮箱提取策略 =====
-          // companyContactsEnrichment 是付费功能，免费用户关闭
-          // 免费方案：先获取网站URL → 后续用 Email Extractor 提取邮箱
-          companyContactsEnrichment: false,
+          // 开启邮箱提取功能，直接获取商家邮箱
+          companyContactsEnrichment: true,
           socialMediaProfilesEnrichment: false,
           // ===== 其他配置 =====
           // 不抓取评论（加快速度）
